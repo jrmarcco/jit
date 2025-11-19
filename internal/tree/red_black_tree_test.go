@@ -33,7 +33,7 @@ func validRBTree[K any, V any](root *rbNode[K, V]) bool {
 	return validRBNode(root, cnt, num)
 }
 
-func validRBNode[K any, V any](node *rbNode[K, V], cnt int, num int) bool {
+func validRBNode[K, V any](node *rbNode[K, V], cnt, num int) bool {
 	if node == nil {
 		return true
 	}
@@ -58,6 +58,8 @@ func validRBNode[K any, V any](node *rbNode[K, V], cnt int, num int) bool {
 }
 
 func TestNewRBTree(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name    string
 		cmp     jit.Comparator[int]
@@ -76,6 +78,8 @@ func TestNewRBTree(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			rbt := NewRBTree[int, string](tc.cmp)
 			assert.Equal(t, tc.wantRes, validRBTree(rbt.root))
 		})
@@ -83,6 +87,8 @@ func TestNewRBTree(t *testing.T) {
 }
 
 func TestRBTree_ValidateRBTree(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name    string
 		node    *rbNode[int, int]
@@ -196,12 +202,16 @@ func TestRBTree_ValidateRBTree(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			assert.Equal(t, tc.wantRes, validRBTree(tc.node))
 		})
 	}
 }
 
 func TestRBTree_Insert(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name     string
 		putNodes []*rbNode[int, int]
@@ -260,6 +270,8 @@ func TestRBTree_Insert(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			rbt := NewRBTree[int, int](testCmp)
 			for _, node := range tc.putNodes {
 				err := rbt.Put(node.key, node.val)
@@ -280,6 +292,8 @@ func TestRBTree_Insert(t *testing.T) {
 }
 
 func TestRBTree_Del(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name     string
 		putNodes []*rbNode[int, int]
@@ -339,6 +353,8 @@ func TestRBTree_Del(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			rbt := NewRBTree[int, int](testCmp)
 			for _, node := range tc.putNodes {
 				_ = rbt.Put(node.key, node.val)
@@ -362,6 +378,7 @@ func TestRBTree_Del(t *testing.T) {
 }
 
 func TestRBTree_Set(t *testing.T) {
+	t.Parallel()
 
 	tcs := []struct {
 		name     string
@@ -392,6 +409,8 @@ func TestRBTree_Set(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			rbt := NewRBTree[int, int](testCmp)
 			for _, node := range tc.putNodes {
 				_ = rbt.Put(node.key, node.val)
@@ -412,6 +431,8 @@ func TestRBTree_Set(t *testing.T) {
 }
 
 func TestRBTree_Get(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name     string
 		putNodes []*rbNode[int, int]
@@ -436,6 +457,8 @@ func TestRBTree_Get(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			rbt := NewRBTree[int, int](testCmp)
 			for _, node := range tc.putNodes {
 				_ = rbt.Put(node.key, node.val)

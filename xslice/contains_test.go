@@ -7,6 +7,8 @@ import (
 )
 
 func TestContainsFunc(t *testing.T) {
+	t.Parallel()
+
 	testCases := []struct {
 		name    string
 		slice   []int
@@ -38,6 +40,8 @@ func TestContainsFunc(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			res := ContainsFunc(tc.slice, func(t int) bool { return t == tc.elem })
 			assert.Equal(t, tc.wantRes, res)
 		})
@@ -45,6 +49,8 @@ func TestContainsFunc(t *testing.T) {
 }
 
 func TestContains(t *testing.T) {
+	t.Parallel()
+
 	testCases := []struct {
 		name    string
 		slice   []int
@@ -76,6 +82,8 @@ func TestContains(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			res := Contains(tc.slice, tc.elem)
 			assert.Equal(t, tc.wantRes, res)
 		})
@@ -83,6 +91,8 @@ func TestContains(t *testing.T) {
 }
 
 func TestContainsAnyFunc(t *testing.T) {
+	t.Parallel()
+
 	testCases := []struct {
 		name    string
 		slice   []int
@@ -118,6 +128,8 @@ func TestContainsAnyFunc(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			res := ContainsAnyFunc(tc.slice, tc.elems, func(src, dst int) bool { return src == dst })
 			assert.Equal(t, tc.wantRes, res)
 		})
@@ -125,6 +137,8 @@ func TestContainsAnyFunc(t *testing.T) {
 }
 
 func TestContainsAny(t *testing.T) {
+	t.Parallel()
+
 	testCases := []struct {
 		name    string
 		slice   []int
@@ -160,6 +174,8 @@ func TestContainsAny(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			res := ContainsAny(tc.slice, tc.elems)
 			assert.Equal(t, tc.wantRes, res)
 		})
@@ -167,6 +183,8 @@ func TestContainsAny(t *testing.T) {
 }
 
 func TestContainsAllFunc(t *testing.T) {
+	t.Parallel()
+
 	testCases := []struct {
 		name    string
 		slice   []int
@@ -203,6 +221,8 @@ func TestContainsAllFunc(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			res := ContainsAllFunc(tc.slice, tc.elems, func(src, dst int) bool { return src == dst })
 			assert.Equal(t, tc.wantRes, res)
 		})
@@ -210,6 +230,8 @@ func TestContainsAllFunc(t *testing.T) {
 }
 
 func TestContainsAll(t *testing.T) {
+	t.Parallel()
+
 	testCases := []struct {
 		name    string
 		slice   []int
@@ -246,6 +268,8 @@ func TestContainsAll(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			res := ContainsAll(tc.slice, tc.elems)
 			assert.Equal(t, tc.wantRes, res)
 		})

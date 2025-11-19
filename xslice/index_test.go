@@ -8,6 +8,8 @@ import (
 )
 
 func TestIndexFunc(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name    string
 		slice   []int
@@ -34,6 +36,8 @@ func TestIndexFunc(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			res := IndexFunc(tc.slice, func(t int) bool { return t == tc.elem })
 			assert.Equal(t, tc.wantRes, res)
 		})
@@ -41,6 +45,8 @@ func TestIndexFunc(t *testing.T) {
 }
 
 func TestIndex(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name    string
 		slice   []int
@@ -67,6 +73,8 @@ func TestIndex(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			res := Index(tc.slice, tc.elem)
 			assert.Equal(t, tc.wantRes, res)
 		})
@@ -74,6 +82,8 @@ func TestIndex(t *testing.T) {
 }
 
 func TestLastIndexFunc(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name    string
 		slice   []int
@@ -100,6 +110,8 @@ func TestLastIndexFunc(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			res := LastIndexFunc(tc.slice, func(t int) bool { return t == tc.elem })
 			assert.Equal(t, tc.wantRes, res)
 		})
@@ -107,6 +119,8 @@ func TestLastIndexFunc(t *testing.T) {
 }
 
 func TestLastIndex(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name    string
 		slice   []int
@@ -133,6 +147,8 @@ func TestLastIndex(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			res := LastIndex(tc.slice, tc.elem)
 			assert.Equal(t, tc.wantRes, res)
 		})
@@ -140,6 +156,8 @@ func TestLastIndex(t *testing.T) {
 }
 
 func TestIndexAllFunc(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name    string
 		slice   []int
@@ -165,6 +183,8 @@ func TestIndexAllFunc(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			res := IndexAllFunc(tc.slice, func(t int) bool { return t == tc.elem })
 			assert.ElementsMatch(t, tc.wantRes, res)
 		})
@@ -172,6 +192,8 @@ func TestIndexAllFunc(t *testing.T) {
 }
 
 func TestIndexAll(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name    string
 		slice   []int
@@ -197,6 +219,8 @@ func TestIndexAll(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			res := IndexAll(tc.slice, tc.elem)
 			assert.ElementsMatch(t, tc.wantRes, res)
 		})

@@ -12,6 +12,8 @@ var testCmp = func() jit.Comparator[int] {
 }()
 
 func TestSkipList_Insert(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name      string
 		list      *SkipList[int]
@@ -21,14 +23,14 @@ func TestSkipList_Insert(t *testing.T) {
 	}{
 		{
 			name:      "basic",
-			list:      NewSkipList[int](testCmp),
+			list:      NewSkipList(testCmp),
 			val:       1,
 			wantSlice: []int{1},
 			wantSize:  1,
 		}, {
 			name: "insert exists value",
 			list: func() *SkipList[int] {
-				sl := NewSkipList[int](testCmp)
+				sl := NewSkipList(testCmp)
 				sl.Insert(1)
 				sl.Insert(2)
 				sl.Insert(3)
@@ -40,7 +42,7 @@ func TestSkipList_Insert(t *testing.T) {
 		}, {
 			name: "insert to head",
 			list: func() *SkipList[int] {
-				sl := NewSkipList[int](testCmp)
+				sl := NewSkipList(testCmp)
 				sl.Insert(1)
 				sl.Insert(2)
 				sl.Insert(3)
@@ -54,7 +56,7 @@ func TestSkipList_Insert(t *testing.T) {
 		}, {
 			name: "insert to tail",
 			list: func() *SkipList[int] {
-				sl := NewSkipList[int](testCmp)
+				sl := NewSkipList(testCmp)
 				sl.Insert(1)
 				sl.Insert(2)
 				sl.Insert(3)
@@ -68,8 +70,9 @@ func TestSkipList_Insert(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
-			tc.list.Insert(tc.val)
+			t.Parallel()
 
+			tc.list.Insert(tc.val)
 			assert.Equal(t, tc.list.Len(), tc.wantSize)
 			assert.Equal(t, tc.list.ToSlice(), tc.wantSlice)
 		})
@@ -77,6 +80,8 @@ func TestSkipList_Insert(t *testing.T) {
 }
 
 func TestSkipList_Delete(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name      string
 		list      *SkipList[int]
@@ -88,7 +93,7 @@ func TestSkipList_Delete(t *testing.T) {
 		{
 			name: "basic",
 			list: func() *SkipList[int] {
-				sl := NewSkipList[int](testCmp)
+				sl := NewSkipList(testCmp)
 				sl.Insert(1)
 				sl.Insert(2)
 				sl.Insert(3)
@@ -101,7 +106,7 @@ func TestSkipList_Delete(t *testing.T) {
 		}, {
 			name: "delete non-exist value",
 			list: func() *SkipList[int] {
-				sl := NewSkipList[int](testCmp)
+				sl := NewSkipList(testCmp)
 				sl.Insert(1)
 				sl.Insert(2)
 				sl.Insert(3)
@@ -114,7 +119,7 @@ func TestSkipList_Delete(t *testing.T) {
 		}, {
 			name: "delete head",
 			list: func() *SkipList[int] {
-				sl := NewSkipList[int](testCmp)
+				sl := NewSkipList(testCmp)
 				sl.Insert(1)
 				sl.Insert(2)
 				sl.Insert(3)
@@ -127,7 +132,7 @@ func TestSkipList_Delete(t *testing.T) {
 		}, {
 			name: "delete tail",
 			list: func() *SkipList[int] {
-				sl := NewSkipList[int](testCmp)
+				sl := NewSkipList(testCmp)
 				sl.Insert(1)
 				sl.Insert(2)
 				sl.Insert(3)
@@ -139,7 +144,7 @@ func TestSkipList_Delete(t *testing.T) {
 			wantRes:   true,
 		}, {
 			name:      "delete from empty list",
-			list:      NewSkipList[int](testCmp),
+			list:      NewSkipList(testCmp),
 			val:       1,
 			wantSlice: []int{},
 			wantSize:  0,
@@ -149,8 +154,9 @@ func TestSkipList_Delete(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
-			res := tc.list.Delete(tc.val)
+			t.Parallel()
 
+			res := tc.list.Delete(tc.val)
 			assert.Equal(t, tc.list.Len(), tc.wantSize)
 			assert.Equal(t, tc.list.ToSlice(), tc.wantSlice)
 			assert.Equal(t, res, tc.wantRes)
@@ -159,6 +165,8 @@ func TestSkipList_Delete(t *testing.T) {
 }
 
 func TestSkipList_Exist(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name    string
 		list    *SkipList[int]
@@ -168,7 +176,7 @@ func TestSkipList_Exist(t *testing.T) {
 		{
 			name: "basic",
 			list: func() *SkipList[int] {
-				sl := NewSkipList[int](testCmp)
+				sl := NewSkipList(testCmp)
 				sl.Insert(1)
 				sl.Insert(2)
 				sl.Insert(3)
@@ -179,7 +187,7 @@ func TestSkipList_Exist(t *testing.T) {
 		}, {
 			name: "not exist",
 			list: func() *SkipList[int] {
-				sl := NewSkipList[int](testCmp)
+				sl := NewSkipList(testCmp)
 				sl.Insert(1)
 				sl.Insert(2)
 				sl.Insert(3)
@@ -189,7 +197,7 @@ func TestSkipList_Exist(t *testing.T) {
 			wantRes: false,
 		}, {
 			name:    "empty list",
-			list:    NewSkipList[int](testCmp),
+			list:    NewSkipList(testCmp),
 			target:  1,
 			wantRes: false,
 		},
@@ -197,6 +205,8 @@ func TestSkipList_Exist(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			exists := tc.list.Exists(tc.target)
 			assert.Equal(t, exists, tc.wantRes)
 		})
@@ -204,6 +214,8 @@ func TestSkipList_Exist(t *testing.T) {
 }
 
 func TestSkipList_GetByIndex(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name    string
 		list    *SkipList[int]
@@ -214,7 +226,7 @@ func TestSkipList_GetByIndex(t *testing.T) {
 		{
 			name: "basic",
 			list: func() *SkipList[int] {
-				sl := NewSkipList[int](testCmp)
+				sl := NewSkipList(testCmp)
 				sl.Insert(1)
 				sl.Insert(2)
 				sl.Insert(3)
@@ -226,7 +238,7 @@ func TestSkipList_GetByIndex(t *testing.T) {
 		}, {
 			name: "not exist",
 			list: func() *SkipList[int] {
-				sl := NewSkipList[int](testCmp)
+				sl := NewSkipList(testCmp)
 				sl.Insert(1)
 				sl.Insert(2)
 				sl.Insert(3)
@@ -237,14 +249,14 @@ func TestSkipList_GetByIndex(t *testing.T) {
 			wantRes: false,
 		}, {
 			name:    "empty list",
-			list:    NewSkipList[int](testCmp),
+			list:    NewSkipList(testCmp),
 			idx:     0,
 			wantVal: 0,
 			wantRes: false,
 		}, {
 			name: "head",
 			list: func() *SkipList[int] {
-				sl := NewSkipList[int](testCmp)
+				sl := NewSkipList(testCmp)
 				sl.Insert(1)
 				sl.Insert(2)
 				sl.Insert(3)
@@ -256,7 +268,7 @@ func TestSkipList_GetByIndex(t *testing.T) {
 		}, {
 			name: "tail",
 			list: func() *SkipList[int] {
-				sl := NewSkipList[int](testCmp)
+				sl := NewSkipList(testCmp)
 				sl.Insert(1)
 				sl.Insert(2)
 				sl.Insert(3)
@@ -268,7 +280,7 @@ func TestSkipList_GetByIndex(t *testing.T) {
 		}, {
 			name: "out of range",
 			list: func() *SkipList[int] {
-				sl := NewSkipList[int](testCmp)
+				sl := NewSkipList(testCmp)
 				sl.Insert(1)
 				sl.Insert(2)
 				sl.Insert(3)
@@ -279,7 +291,7 @@ func TestSkipList_GetByIndex(t *testing.T) {
 		}, {
 			name: "negative index",
 			list: func() *SkipList[int] {
-				sl := NewSkipList[int](testCmp)
+				sl := NewSkipList(testCmp)
 				sl.Insert(1)
 				sl.Insert(2)
 				sl.Insert(3)
@@ -292,6 +304,8 @@ func TestSkipList_GetByIndex(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			val, ok := tc.list.Get(tc.idx)
 			assert.Equal(t, ok, tc.wantRes)
 
@@ -303,6 +317,8 @@ func TestSkipList_GetByIndex(t *testing.T) {
 }
 
 func TestSkipList_Peek(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name    string
 		list    *SkipList[int]
@@ -312,7 +328,7 @@ func TestSkipList_Peek(t *testing.T) {
 		{
 			name: "basic",
 			list: func() *SkipList[int] {
-				sl := NewSkipList[int](testCmp)
+				sl := NewSkipList(testCmp)
 				sl.Insert(1)
 				sl.Insert(2)
 				sl.Insert(3)
@@ -322,7 +338,7 @@ func TestSkipList_Peek(t *testing.T) {
 			wantRes: true,
 		}, {
 			name:    "empty list",
-			list:    NewSkipList[int](testCmp),
+			list:    NewSkipList(testCmp),
 			wantVal: 0,
 			wantRes: false,
 		},
@@ -330,6 +346,8 @@ func TestSkipList_Peek(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			val, ok := tc.list.Peek()
 			assert.Equal(t, ok, tc.wantRes)
 

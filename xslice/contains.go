@@ -13,7 +13,7 @@ func Contains[T comparable](slice []T, elem T) bool {
 }
 
 // ContainsAnyFunc checks if the slice contains any of the given elements.
-func ContainsAnyFunc[T comparable](slice []T, elems []T, eq eqFunc[T]) bool {
+func ContainsAnyFunc[T comparable](slice, elems []T, eq eqFunc[T]) bool {
 	for _, e := range elems {
 		for _, v := range slice {
 			if eq(v, e) {
@@ -25,7 +25,7 @@ func ContainsAnyFunc[T comparable](slice []T, elems []T, eq eqFunc[T]) bool {
 }
 
 // ContainsAny checks if the slice contains any of the given elements.
-func ContainsAny[T comparable](slice []T, elems []T) bool {
+func ContainsAny[T comparable](slice, elems []T) bool {
 	srcMap := toMap(slice)
 	for _, e := range elems {
 		if _, ok := srcMap[e]; ok {
@@ -36,7 +36,7 @@ func ContainsAny[T comparable](slice []T, elems []T) bool {
 }
 
 // ContainsAllFunc checks if the slice contains all of the given elements.
-func ContainsAllFunc[T comparable](slice []T, elems []T, eq eqFunc[T]) bool {
+func ContainsAllFunc[T comparable](slice, elems []T, eq eqFunc[T]) bool {
 	if slice == nil || elems == nil {
 		return false
 	}
@@ -50,7 +50,7 @@ func ContainsAllFunc[T comparable](slice []T, elems []T, eq eqFunc[T]) bool {
 }
 
 // ContainsAll checks if the slice contains all of the given elements.
-func ContainsAll[T comparable](slice []T, elems []T) bool {
+func ContainsAll[T comparable](slice, elems []T) bool {
 	if slice == nil || elems == nil {
 		return false
 	}

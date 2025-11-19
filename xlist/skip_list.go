@@ -39,6 +39,6 @@ func (sl *SkipList[T]) ToSlice() []T {
 
 func NewSkipList[T any](cmp jit.Comparator[T]) *SkipList[T] {
 	return &SkipList[T]{
-		skipList: list.NewSkipList[T](cmp),
+		skipList: list.NewSkipList(cmp),
 	}
 }

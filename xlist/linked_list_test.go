@@ -10,6 +10,8 @@ import (
 )
 
 func TestLinkedList(t *testing.T) {
+	t.Parallel()
+
 	ll := LinkedListOf([]int{1, 2, 3})
 
 	var err error
@@ -29,6 +31,8 @@ func TestLinkedList(t *testing.T) {
 }
 
 func TestLinkedList_Insert(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name     string
 		ll       *LinkedList[int]
@@ -79,6 +83,8 @@ func TestLinkedList_Insert(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			err := tc.ll.Insert(tc.index, tc.value)
 			assert.Equal(t, tc.wantErr, err)
 			assert.Equal(t, tc.wantSize, tc.ll.Len())
@@ -94,6 +100,8 @@ func TestLinkedList_Insert(t *testing.T) {
 }
 
 func TestLinkedList_Del(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name     string
 		ll       *LinkedList[int]
@@ -132,6 +140,8 @@ func TestLinkedList_Del(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			err := tc.ll.Del(tc.index)
 			assert.Equal(t, tc.wantErr, err)
 			assert.Equal(t, tc.wantSize, tc.ll.Len())
@@ -141,6 +151,8 @@ func TestLinkedList_Del(t *testing.T) {
 }
 
 func TestLinkedList_Set(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name     string
 		ll       *LinkedList[int]
@@ -184,6 +196,8 @@ func TestLinkedList_Set(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			err := tc.ll.Set(tc.index, tc.value)
 			assert.Equal(t, tc.wantErr, err)
 			assert.Equal(t, tc.wantSize, tc.ll.Len())
@@ -199,6 +213,8 @@ func TestLinkedList_Set(t *testing.T) {
 }
 
 func TestLinkedList_Get(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name    string
 		ll      *LinkedList[int]
@@ -231,6 +247,8 @@ func TestLinkedList_Get(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			val, err := tc.ll.Get(tc.index)
 			assert.Equal(t, tc.wantErr, err)
 

@@ -8,6 +8,8 @@ import (
 )
 
 func TestAdd(t *testing.T) {
+	t.Parallel()
+
 	testCases := []struct {
 		name    string
 		slice   []int
@@ -62,6 +64,8 @@ func TestAdd(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			res, err := Add(tc.slice, tc.index, tc.item)
 			assert.Equal(t, tc.wantErr, err)
 

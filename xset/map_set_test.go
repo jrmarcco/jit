@@ -8,6 +8,8 @@ import (
 
 // overcapacity
 func TestMapSet_Add(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name     string
 		size     int
@@ -25,6 +27,8 @@ func TestMapSet_Add(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			s := NewMapSet[int](tc.size)
 			for _, key := range tc.keys {
 				s.Add(key)
@@ -36,6 +40,8 @@ func TestMapSet_Add(t *testing.T) {
 }
 
 func TestMapSet_Del(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name    string
 		delVal  int
@@ -57,6 +63,8 @@ func TestMapSet_Del(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			s := NewMapSet[int](len(tc.m))
 			s.m = tc.m
 			s.Del(tc.delVal)
@@ -66,6 +74,8 @@ func TestMapSet_Del(t *testing.T) {
 }
 
 func TestMapSet_Exist(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name    string
 		val     int
@@ -87,6 +97,8 @@ func TestMapSet_Exist(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			s := NewMapSet[int](len(tc.m))
 			s.m = tc.m
 			assert.Equal(t, tc.wantRes, s.Exist(tc.val))
@@ -95,6 +107,8 @@ func TestMapSet_Exist(t *testing.T) {
 }
 
 func TestMapSet_Keys(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name    string
 		m       map[int]struct{}
@@ -113,6 +127,8 @@ func TestMapSet_Keys(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			s := NewMapSet[int](len(tc.m))
 			s.m = tc.m
 			assert.ElementsMatch(t, tc.wantRes, s.Elems())

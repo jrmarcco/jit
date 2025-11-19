@@ -9,6 +9,8 @@ import (
 )
 
 func TestMap(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name string
 		src  []int
@@ -18,28 +20,34 @@ func TestMap(t *testing.T) {
 		{
 			name: "basic",
 			src:  []int{1, 2, 3},
-			fn:   func(idx int, src int) int { return src * 2 },
+			fn:   func(_ int, src int) int { return src * 2 },
 			want: []int{2, 4, 6},
 		}, {
 			name: "empty",
 			src:  []int{},
-			fn:   func(idx int, src int) int { return src * 2 },
+			fn:   func(_ int, src int) int { return src * 2 },
 			want: []int{},
 		}, {
 			name: "nil",
 			src:  nil,
-			fn:   func(idx int, src int) int { return src * 2 },
+			fn:   func(_ int, src int) int { return src * 2 },
 			want: nil,
 		},
 	}
 
 	for _, tc := range tcs {
-		res := Map(tc.src, tc.fn)
-		assert.ElementsMatch(t, tc.want, res)
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			res := Map(tc.src, tc.fn)
+			assert.ElementsMatch(t, tc.want, res)
+		})
 	}
 }
 
 func TestFilterMap(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name string
 		src  []int
@@ -64,18 +72,24 @@ func TestFilterMap(t *testing.T) {
 		}, {
 			name: "no match",
 			src:  []int{1, 2, 3, 4, 5},
-			fn:   func(idx int, src int) (int, bool) { return src * 2, src > 10 },
+			fn:   func(_ int, src int) (int, bool) { return src * 2, src > 10 },
 			want: []int{},
 		},
 	}
 
 	for _, tc := range tcs {
-		res := FilterMap(tc.src, tc.fn)
-		assert.ElementsMatch(t, tc.want, res)
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			res := FilterMap(tc.src, tc.fn)
+			assert.ElementsMatch(t, tc.want, res)
+		})
 	}
 }
 
 func TestToMap(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name string
 		src  []int
@@ -85,28 +99,34 @@ func TestToMap(t *testing.T) {
 		{
 			name: "basic",
 			src:  []int{1, 2, 3, 4, 5},
-			fn:   func(elem int) string { return strconv.Itoa(elem) },
+			fn:   strconv.Itoa,
 			want: map[string]int{"1": 1, "2": 2, "3": 3, "4": 4, "5": 5},
 		}, {
 			name: "empty",
 			src:  []int{},
-			fn:   func(elem int) string { return strconv.Itoa(elem) },
+			fn:   strconv.Itoa,
 			want: map[string]int{},
 		}, {
 			name: "nil",
 			src:  nil,
-			fn:   func(elem int) string { return strconv.Itoa(elem) },
+			fn:   strconv.Itoa,
 			want: map[string]int{},
 		},
 	}
 
 	for _, tc := range tcs {
-		res := ToMap(tc.src, tc.fn)
-		assert.Equal(t, tc.want, res)
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			res := ToMap(tc.src, tc.fn)
+			assert.Equal(t, tc.want, res)
+		})
 	}
 }
 
 func TestToMapWithVal(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name string
 		src  []int
@@ -132,14 +152,18 @@ func TestToMapWithVal(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		res := ToMapWithVal(tc.src, tc.fn)
-		assert.Equal(t, tc.want, res)
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			res := ToMapWithVal(tc.src, tc.fn)
+			assert.Equal(t, tc.want, res)
+		})
 	}
 }
 
 func ExampleMap() {
 	src := []int{1, 2, 3, 4, 5}
-	res := Map(src, func(idx int, src int) int { return src * 2 })
+	res := Map(src, func(_ int, src int) int { return src * 2 })
 	fmt.Println(res)
 	// Output: [2 4 6 8 10]
 }

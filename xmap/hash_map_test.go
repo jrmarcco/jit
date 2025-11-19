@@ -25,6 +25,8 @@ func (t testKey) Equals(other any) bool {
 }
 
 func TestHashMap(t *testing.T) {
+	t.Parallel()
+
 	initData := []struct {
 		key testKey
 		val string
@@ -59,7 +61,6 @@ func TestHashMap(t *testing.T) {
 	hm := NewHashMap[testKey, string](16)
 	for _, d := range initData {
 		_ = hm.Put(d.key, d.val)
-
 	}
 
 	wantHm := NewHashMap[testKey, string](16)
@@ -114,6 +115,8 @@ func TestHashMap(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			val, ok := hm.Get(tc.key)
 			assert.Equal(t, ok, tc.wantRes)
 
@@ -125,6 +128,8 @@ func TestHashMap(t *testing.T) {
 }
 
 func TestHashMap_Del(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name    string
 		key     testKey
@@ -208,6 +213,8 @@ func TestHashMap_Del(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			val, ok := tc.hm.Del(tc.key)
 			assert.Equal(t, ok, tc.wantRes)
 
@@ -220,6 +227,8 @@ func TestHashMap_Del(t *testing.T) {
 }
 
 func TestHashMap_Kvs(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name     string
 		hm       *HashMap[testKey, string]
@@ -284,6 +293,8 @@ func TestHashMap_Kvs(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			keys := tc.hm.Keys()
 			assert.Equal(t, len(tc.wantKeys), len(keys))
 			assert.ElementsMatch(t, tc.wantKeys, keys)
@@ -293,7 +304,6 @@ func TestHashMap_Kvs(t *testing.T) {
 			assert.ElementsMatch(t, tc.wantVals, vals)
 
 			assert.Equal(t, tc.hm.Size(), tc.wantSize)
-
 		})
 	}
 }

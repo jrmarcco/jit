@@ -264,85 +264,107 @@ func (p *BlockTaskPool) newG(id int32) {
 
 		case <-idleTimer.C:
 			// 空闲时收到超时信号，即 goroutine 在 maxIdleTime 时间内没获取到可执行任务
-			p.mu.Lock()
-			// 任务池 goroutine 总数 -1
-			p.totalG--
-			// 从超时组移除当前 goroutine id
-			p.timeoutG.del(id)
-			p.mu.Unlock()
+			p.handleIdleTimeout(id)
 			return
 
 		case task, ok := <-p.queue:
-			// 当 p.queue 被 close，这里会收到零值 task 和 false
-			if p.timeoutG.in(id) {
-				// 当前 goroutine 在超时组中，且在超时前成功拿到任务执行
-				p.timeoutG.del(id)
-				if !idleTimer.Stop() {
-					<-idleTimer.C
-				}
-			}
-
-			if !ok {
-				// !ok 意味着任务队列被关闭
-				p.decreaseG(1)
-				// 任务池中没有 goroutine
-				if p.countG() == 0 {
-					// 因 shutdown 导致的 goroutine 退出，
-					// 最后一个退出的 goroutine 需要负责状态迁移，并通知外部调用者。
-					if atomic.CompareAndSwapInt32(&p.state, stateClosing, stateClosed) {
-						// 调用 context.CancelFunc 通知外部调用者
-						p.interruptCancelFunc()
-					}
-				}
+			if !p.processTask(id, task, ok, idleTimer) {
 				return
 			}
-
-			// 成功获取可执行任务
-			atomic.AddInt32(&p.totalRunningG, 1)
-			err := task.Run(p.interruptCtx)
-			atomic.AddInt32(&p.totalRunningG, -1)
-
-			// 处理任务执行错误
-			if err != nil && p.errHandler != nil {
-				// 在独立的 goroutine 中调用错误 errHandler，
-				// 避免 errHandler 发生 panic 影响任务池的运行。
-				go func(err error) {
-					defer func() {
-						if r := recover(); r != nil {
-						}
-					}()
-
-					// 超时控制，避免 goroutine 泄露
-					ctx, cancel := context.WithTimeout(p.interruptCtx, p.errHandleTimeout)
-					p.errHandler(ctx, err)
-					cancel()
-				}(err)
-			}
-
-			// 任务执行完成后的判断。
-			p.mu.Lock()
-
-			// 检查队列中是否还有任务需要执行。
-			noTaskToExec := len(p.queue) == 0 || int32(len(p.queue)) < p.totalG
-			// 临时 goroutine 的快速退出策略
-			if noTaskToExec && p.coreG < p.totalG && p.totalG <= p.maxG {
-				// 当前 goroutine 处于 (coreG, maxG] 区间（即临时 goroutine），直接退出 goroutine。
-				p.totalG--
-				p.mu.Unlock()
-				return
-			}
-
-			// p.totalG-p.timeoutG.size() -> 当前活跃的 goroutine 数
-			// 核心 goroutine 的超时管理，为属于 (initG, coreG] 区间的 goroutine 设置超时器。
-			if p.initG < p.totalG-p.timeoutG.size() {
-				// 核心 goroutine 不立即退出能保证在一定时间（maxIdleTime）由任务提交带来的扩容，保持核心处理能力。
-				idleTimer = time.NewTimer(p.maxIdleTime)
-				p.timeoutG.add(id)
-			}
-
-			p.mu.Unlock()
 		}
 	}
+}
+
+// handleIdleTimeout 处理空闲超时。
+func (p *BlockTaskPool) handleIdleTimeout(id int32) {
+	p.mu.Lock()
+	// 任务池 goroutine 总数 -1
+	p.totalG--
+	// 从超时组移除当前 goroutine id
+	p.timeoutG.del(id)
+	p.mu.Unlock()
+}
+
+// processTask 处理任务的核心流程。
+func (p *BlockTaskPool) processTask(id int32, task Task, ok bool, idleTimer *time.Timer) bool {
+	// 当 p.queue 被 close，这里会收到零值 task 和 false
+	if p.timeoutG.in(id) {
+		// 当前 goroutine 在超时组中，且在超时前成功拿到任务执行
+		p.timeoutG.del(id)
+		if !idleTimer.Stop() {
+			<-idleTimer.C
+		}
+	}
+
+	if !ok {
+		// !ok 意味着任务队列被关闭
+		p.decreaseG(1)
+		// 任务池中没有 goroutine
+		if p.countG() == 0 {
+			// 因 shutdown 导致的 goroutine 退出，
+			// 最后一个退出的 goroutine 需要负责状态迁移，并通知外部调用者。
+			if atomic.CompareAndSwapInt32(&p.state, stateClosing, stateClosed) {
+				// 调用 context.CancelFunc 通知外部调用者
+				p.interruptCancelFunc()
+			}
+		}
+		return false
+	}
+
+	// 成功获取可执行任务
+	atomic.AddInt32(&p.totalRunningG, 1)
+	err := task.Run(p.interruptCtx)
+	atomic.AddInt32(&p.totalRunningG, -1)
+
+	// 处理任务执行错误
+	if err != nil && p.errHandler != nil {
+		p.handleTaskError(err)
+	}
+
+	return p.shouldContinue(id, idleTimer)
+}
+
+// handleTaskError 处理任务执行错误。
+// 在独立的 goroutine 中调用错误处理器，避免错误处理器发生 panic 影响任务池的运行。
+func (p *BlockTaskPool) handleTaskError(err error) {
+	// 在独立的 goroutine 中调用错误 errHandler，
+	// 避免 errHandler 发生 panic 影响任务池的运行。
+	go func(ctx context.Context, err error) {
+		defer func() {
+			if r := recover(); r != nil {
+			}
+		}()
+
+		// 超时控制，避免 goroutine 泄露
+		ctx, cancel := context.WithTimeout(ctx, p.errHandleTimeout)
+		p.errHandler(ctx, err)
+		cancel()
+	}(p.interruptCtx, err)
+}
+
+// shouldContinue 封装了任务执行后判断是否继续运行的策略（包含缩容和重置超时）。
+func (p *BlockTaskPool) shouldContinue(id int32, idleTimer *time.Timer) bool {
+	// 任务执行完成后的判断。
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	// 检查队列中是否还有任务需要执行。
+	noTaskToExec := len(p.queue) == 0 || int32(len(p.queue)) < p.totalG
+	// 临时 goroutine 的快速退出策略
+	if noTaskToExec && p.coreG < p.totalG && p.totalG <= p.maxG {
+		// 当前 goroutine 处于 (coreG, maxG] 区间（即临时 goroutine），直接退出 goroutine。
+		p.totalG--
+		return false
+	}
+
+	// p.totalG-p.timeoutG.size() -> 当前活跃的 goroutine 数
+	// 核心 goroutine 的超时管理，为属于 (initG, coreG] 区间的 goroutine 设置超时器。
+	if p.initG < p.totalG-p.timeoutG.size() {
+		// 核心 goroutine 不立即退出能保证在一定时间（maxIdleTime）由任务提交带来的扩容，保持核心处理能力。
+		idleTimer.Reset(p.maxIdleTime)
+		p.timeoutG.add(id)
+	}
+	return true
 }
 
 func (p *BlockTaskPool) increaseG(delta int32) {
@@ -554,7 +576,7 @@ func WithErrHandleTimeout(errHandleTimeout time.Duration) option.Opt[BlockTaskPo
 }
 
 // NewBlockTaskPool 创建任务池。
-func NewBlockTaskPool(initG int32, queueSize int32, opts ...option.Opt[BlockTaskPool]) (*BlockTaskPool, error) {
+func NewBlockTaskPool(initG, queueSize int32, opts ...option.Opt[BlockTaskPool]) (*BlockTaskPool, error) {
 	if initG <= 0 {
 		return nil, fmt.Errorf("%w: init goroutine should be greater than 0", errInvalidParam)
 	}

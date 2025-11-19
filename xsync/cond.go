@@ -229,7 +229,11 @@ func newChanList() *chanList {
 // allocate returns a node from the pool.
 // if the pool is empty, a new node is created.
 func (l *chanList) allocate() *node {
-	return l.pool.Get().(*node)
+	n, ok := l.pool.Get().(*node)
+	if !ok {
+		panic("[jit] pool contained non-node value")
+	}
+	return n
 }
 
 // pushBack adds a new node to the back of the list.

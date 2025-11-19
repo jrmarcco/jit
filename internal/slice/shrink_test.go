@@ -7,6 +7,8 @@ import (
 )
 
 func TestShrink(t *testing.T) {
+	t.Parallel()
+
 	testCases := []struct {
 		name      string
 		originCap int
@@ -48,8 +50,9 @@ func TestShrink(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			slice := make([]int, 0, tc.originCap)
+			t.Parallel()
 
+			slice := make([]int, 0, tc.originCap)
 			for i := 0; i < tc.originLen; i++ {
 				slice = append(slice, i)
 			}

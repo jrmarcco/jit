@@ -20,6 +20,8 @@ func poolInternalState(p *BlockTaskPool) int32 {
 }
 
 func runningPool(t *testing.T, initG, queueSize int32, opts ...option.Opt[BlockTaskPool]) *BlockTaskPool {
+	t.Helper()
+
 	p, err := NewBlockTaskPool(initG, queueSize, opts...)
 	assert.NoError(t, err)
 
@@ -29,18 +31,20 @@ func runningPool(t *testing.T, initG, queueSize int32, opts ...option.Opt[BlockT
 	return p
 }
 
-func runningPoolWithFilledQueue(t *testing.T, initG, queueSize int32) (*BlockTaskPool, chan struct{}) {
-	p := runningPool(t, initG, queueSize)
-	wait := make(chan struct{})
+func runningPoolWithFilledQueue(t *testing.T, initG, queueSize int32) (p *BlockTaskPool, wait chan struct{}) {
+	t.Helper()
+
+	p = runningPool(t, initG, queueSize)
+	wait = make(chan struct{})
 
 	for i := int32(0); i < initG+queueSize; i++ {
-		err := p.Submit(context.Background(), TaskFunc(func(ctx context.Context) error {
+		err := p.Submit(t.Context(), TaskFunc(func(_ context.Context) error {
 			<-wait
 			return nil
 		}))
 		assert.NoError(t, err)
 	}
-	return p, wait
+	return
 }
 
 func TestNewBlockTaskPool(t *testing.T) {
@@ -108,6 +112,8 @@ func TestNewBlockTaskPool(t *testing.T) {
 }
 
 func TestNewBlockTaskPoolWithOption(t *testing.T) {
+	t.Parallel()
+
 	t.Run("with max idle time", func(t *testing.T) {
 		t.Parallel()
 
@@ -243,7 +249,7 @@ func TestBlockTaskPool_State(t *testing.T) {
 		err = p.Start()
 		assert.NoError(t, err)
 
-		ch, err := p.State(context.Background(), time.Millisecond)
+		ch, err := p.State(t.Context(), time.Millisecond)
 		assert.NoError(t, err)
 		assert.NotZero(t, ch)
 
@@ -258,7 +264,7 @@ func TestBlockTaskPool_State(t *testing.T) {
 		p, err := NewBlockTaskPool(1, 1)
 		assert.NoError(t, err)
 
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		cancel()
 
 		_, err = p.State(ctx, time.Millisecond)
@@ -279,7 +285,7 @@ func TestBlockTaskPool_State(t *testing.T) {
 
 		<-done
 
-		_, err = p.State(context.Background(), time.Millisecond)
+		_, err = p.State(t.Context(), time.Millisecond)
 		assert.ErrorIs(t, err, context.Canceled)
 	})
 
@@ -295,7 +301,7 @@ func TestBlockTaskPool_State(t *testing.T) {
 		_, err = p.ShutdownNow()
 		assert.NoError(t, err)
 
-		_, err = p.State(context.Background(), time.Millisecond)
+		_, err = p.State(t.Context(), time.Millisecond)
 		assert.ErrorIs(t, err, context.Canceled)
 	})
 
@@ -305,7 +311,7 @@ func TestBlockTaskPool_State(t *testing.T) {
 		initG, queueSize := int32(1), int32(3)
 		p, waitCh := runningPoolWithFilledQueue(t, initG, queueSize)
 
-		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Millisecond)
+		ctx, cancel := context.WithTimeout(t.Context(), 3*time.Millisecond)
 		stateCh, err := p.State(ctx, time.Millisecond)
 		assert.NoError(t, err)
 
@@ -334,7 +340,7 @@ func TestBlockTaskPool_State(t *testing.T) {
 		initG, queueSize := int32(1), int32(3)
 		p, waitCh := runningPoolWithFilledQueue(t, initG, queueSize)
 
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		stateCh, err := p.State(ctx, time.Millisecond)
 		assert.NoError(t, err)
 
@@ -360,7 +366,7 @@ func TestBlockTaskPool_State(t *testing.T) {
 
 		p := runningPool(t, 1, 3)
 
-		ch, err := p.State(context.Background(), time.Millisecond)
+		ch, err := p.State(t.Context(), time.Millisecond)
 		assert.NoError(t, err)
 
 		go func() {
@@ -383,7 +389,7 @@ func TestBlockTaskPool_State(t *testing.T) {
 
 		p := runningPool(t, 1, 3)
 
-		ch, err := p.State(context.Background(), time.Millisecond)
+		ch, err := p.State(t.Context(), time.Millisecond)
 		assert.NoError(t, err)
 
 		go func() {
@@ -414,15 +420,19 @@ func TestBlockTaskPool_Submit(t *testing.T) {
 		{
 			name: "basic",
 			poolFunc: func(t *testing.T) *BlockTaskPool {
+				t.Helper()
+
 				p, err := NewBlockTaskPool(1, 3)
 				assert.NoError(t, err)
 				assert.NotNil(t, p)
 				return p
 			},
 			submitFunc: func(t *testing.T, p *BlockTaskPool) {
+				t.Helper()
+
 				var err error
 				for range 3 {
-					err = p.Submit(context.Background(), TaskFunc(func(ctx context.Context) error {
+					err = p.Submit(t.Context(), TaskFunc(func(_ context.Context) error {
 						return nil
 					}))
 					assert.NoError(t, err)
@@ -431,34 +441,40 @@ func TestBlockTaskPool_Submit(t *testing.T) {
 		}, {
 			name: "nil task",
 			poolFunc: func(t *testing.T) *BlockTaskPool {
+				t.Helper()
 				p, err := NewBlockTaskPool(1, 1)
 				assert.NoError(t, err)
 				assert.NotNil(t, p)
 				return p
 			},
 			submitFunc: func(t *testing.T, p *BlockTaskPool) {
-				err := p.Submit(context.Background(), nil)
+				t.Helper()
+
+				err := p.Submit(t.Context(), nil)
 				assert.ErrorIs(t, err, errInvalidTask)
 			},
 		}, {
 			name: "submit timeout",
 			poolFunc: func(t *testing.T) *BlockTaskPool {
+				t.Helper()
+
 				p, err := NewBlockTaskPool(1, 1, WithSubmitTimeout(time.Millisecond))
 				assert.NoError(t, err)
 				assert.NotNil(t, p)
 				return p
 			},
 			submitFunc: func(t *testing.T, p *BlockTaskPool) {
-				done := make(chan struct{})
+				t.Helper()
 
-				err := p.Submit(context.Background(), TaskFunc(func(ctx context.Context) error {
+				done := make(chan struct{})
+				err := p.Submit(t.Context(), TaskFunc(func(_ context.Context) error {
 					<-done
 					return nil
 				}))
 				assert.NoError(t, err)
 
-				ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
-				err = p.Submit(ctx, TaskFunc(func(ctx context.Context) error {
+				ctx, cancel := context.WithTimeout(t.Context(), time.Millisecond)
+				err = p.Submit(ctx, TaskFunc(func(_ context.Context) error {
 					<-done
 					return nil
 				}))
@@ -552,7 +568,7 @@ func TestBlockTaskPool_state_machine(t *testing.T) {
 
 			done := make(chan struct{}, queueSize)
 			for i := 0; i < int(queueSize); i++ {
-				err = p.Submit(context.Background(), TaskFunc(func(ctx context.Context) error {
+				err = p.Submit(t.Context(), TaskFunc(func(_ context.Context) error {
 					// 阻塞 task
 					<-done
 					return nil
@@ -581,7 +597,7 @@ func TestBlockTaskPool_state_machine(t *testing.T) {
 
 			done := make(chan struct{}, queueSize)
 			for i := 0; i < int(queueSize); i++ {
-				err = p.Submit(context.Background(), TaskFunc(func(ctx context.Context) error {
+				err = p.Submit(t.Context(), TaskFunc(func(_ context.Context) error {
 					// 阻塞 task
 					<-done
 					return nil
@@ -620,7 +636,7 @@ func TestBlockTaskPool_state_machine(t *testing.T) {
 
 		done := make(chan struct{}, queueSize)
 		for i := 0; i < int(queueSize); i++ {
-			err = p.Submit(context.Background(), TaskFunc(func(ctx context.Context) error {
+			err = p.Submit(t.Context(), TaskFunc(func(_ context.Context) error {
 				// 阻塞 task
 				<-done
 				return nil
@@ -647,7 +663,7 @@ func TestBlockTaskPool_state_machine(t *testing.T) {
 		var err error
 		done := make(chan struct{}, queueSize)
 		for i := 0; i < int(queueSize); i++ {
-			err = p.Submit(context.Background(), TaskFunc(func(ctx context.Context) error {
+			err = p.Submit(t.Context(), TaskFunc(func(_ context.Context) error {
 				<-done
 				return nil
 			}))
@@ -682,7 +698,7 @@ func TestBlockTaskPool_state_machine(t *testing.T) {
 		// 此时 p.queue 的 task 数会大于等于 1，也即是队列积压率大于 0，
 		// 就会创建核心 goroutine 去立即执行当前 task。
 		for i := 0; i < int(initG); i++ {
-			err = p.Submit(context.Background(), TaskFunc(func(ctx context.Context) error {
+			err = p.Submit(t.Context(), TaskFunc(func(_ context.Context) error {
 				<-done
 				return nil
 			}))
@@ -696,7 +712,7 @@ func TestBlockTaskPool_state_machine(t *testing.T) {
 
 		// 增加任务数 init -> core ( 8 -> 16 )
 		for i := initG; i < coreG; i++ {
-			err = p.Submit(context.Background(), TaskFunc(func(ctx context.Context) error {
+			err = p.Submit(t.Context(), TaskFunc(func(_ context.Context) error {
 				<-done
 				return nil
 			}))
@@ -730,7 +746,7 @@ func TestBlockTaskPool_state_machine(t *testing.T) {
 		// 此时 p.queue 的 task 数会大于等于 1，也即是队列积压率大于 0，
 		// 就会创建核心 goroutine 去立即执行当前 task。
 		for i := 0; i < int(initG); i++ {
-			err = p.Submit(context.Background(), TaskFunc(func(ctx context.Context) error {
+			err = p.Submit(t.Context(), TaskFunc(func(_ context.Context) error {
 				<-done
 				return nil
 			}))
@@ -744,7 +760,7 @@ func TestBlockTaskPool_state_machine(t *testing.T) {
 
 		// 增加任务数 init -> core ( 8 -> 16 )
 		for i := initG; i < coreG; i++ {
-			err = p.Submit(context.Background(), TaskFunc(func(ctx context.Context) error {
+			err = p.Submit(t.Context(), TaskFunc(func(_ context.Context) error {
 				<-done
 				return nil
 			}))
@@ -754,7 +770,7 @@ func TestBlockTaskPool_state_machine(t *testing.T) {
 
 		// 增加任务 core -> max ( 16 -> 32 )
 		for i := coreG; i < maxG; i++ {
-			err = p.Submit(context.Background(), TaskFunc(func(ctx context.Context) error {
+			err = p.Submit(t.Context(), TaskFunc(func(_ context.Context) error {
 				<-done
 				return nil
 			}))

@@ -8,6 +8,8 @@ import (
 )
 
 func TestPool(t *testing.T) {
+	t.Parallel()
+
 	cnt := 0
 	p := NewPool(func() []byte {
 		cnt++

@@ -9,6 +9,8 @@ import (
 )
 
 func TestDiffSet(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name string
 		src  []int
@@ -44,12 +46,18 @@ func TestDiffSet(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		got := DiffSet(tc.src, tc.dst)
-		assert.ElementsMatch(t, got, tc.exp)
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := DiffSet(tc.src, tc.dst)
+			assert.ElementsMatch(t, got, tc.exp)
+		})
 	}
 }
 
 func TestDiffSetFunc(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name string
 		src  []int
@@ -85,8 +93,12 @@ func TestDiffSetFunc(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		got := DiffSetFunc(tc.src, tc.dst, func(src, dst int) bool { return src == dst })
-		assert.ElementsMatch(t, got, tc.exp)
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := DiffSetFunc(tc.src, tc.dst, func(src, dst int) bool { return src == dst })
+			assert.ElementsMatch(t, got, tc.exp)
+		})
 	}
 }
 

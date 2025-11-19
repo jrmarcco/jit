@@ -15,7 +15,7 @@ func NilErr(name string) error {
 	return fmt.Errorf("[jit] %s is nil", name)
 }
 
-func ErrIndexOutOfBounds(length int, index int) error {
+func ErrIndexOutOfBounds(length, index int) error {
 	return fmt.Errorf("[jit] index %d out of bounds for length %d", index, length)
 }
 

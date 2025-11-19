@@ -15,6 +15,8 @@ func concurrentListOf[T any](vals []T) *ConcurrentList[T] {
 }
 
 func TestConcurrentList_Insert(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name    string
 		al      *ConcurrentList[int]
@@ -70,6 +72,8 @@ func TestConcurrentList_Insert(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			err := tc.al.Insert(tc.index, tc.value)
 			assert.Equal(t, err, tc.wantErr)
 			assert.Equal(t, tc.al.Len(), tc.wantLen)
@@ -82,6 +86,8 @@ func TestConcurrentList_Insert(t *testing.T) {
 }
 
 func TestConcurrentList_Append(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name    string
 		al      *ConcurrentList[int]
@@ -118,6 +124,8 @@ func TestConcurrentList_Append(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			err := tc.al.Append(tc.values...)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.al.ToSlice(), tc.wantRes)
@@ -127,6 +135,8 @@ func TestConcurrentList_Append(t *testing.T) {
 }
 
 func TestConcurrentList_Del(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name    string
 		al      *ConcurrentList[int]
@@ -165,6 +175,8 @@ func TestConcurrentList_Del(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			err := tc.al.Del(tc.index)
 			assert.Equal(t, err, tc.wantErr)
 			assert.Equal(t, tc.al.ToSlice(), tc.wantRes)
@@ -173,6 +185,8 @@ func TestConcurrentList_Del(t *testing.T) {
 }
 
 func TestConcurrentList_Set(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name    string
 		al      *ConcurrentList[int]
@@ -211,6 +225,8 @@ func TestConcurrentList_Set(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			err := tc.al.Set(tc.index, tc.value)
 
 			assert.Equal(t, err, tc.wantErr)
@@ -220,6 +236,8 @@ func TestConcurrentList_Set(t *testing.T) {
 }
 
 func TestConcurrentList_Get(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name    string
 		al      *ConcurrentList[int]
@@ -257,6 +275,8 @@ func TestConcurrentList_Get(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			res, err := tc.al.Get(tc.index)
 			assert.Equal(t, err, tc.wantErr)
 

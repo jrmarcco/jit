@@ -20,10 +20,12 @@ MCowBQYDK2VwAyEAxCSxEyY/+A7T7EtXF7AHw4Zfklh/QdjG8fxfRFYZgY8=
 )
 
 type ed25519User struct {
-	Id uint64
+	ID uint64
 }
 
 func TestEd25519Manager(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name           string
 		user           ed25519User
@@ -34,7 +36,7 @@ func TestEd25519Manager(t *testing.T) {
 	}{
 		{
 			name: "basic",
-			user: ed25519User{Id: 1},
+			user: ed25519User{ID: 1},
 			manager: func() *Ed25519Manager[ed25519User] {
 				manager, err := NewEd25519ManagerBuilder[ed25519User](priPem, pubPem).Build()
 				require.NoError(t, err)
@@ -45,7 +47,7 @@ func TestEd25519Manager(t *testing.T) {
 			wantDecryptErr: nil,
 		}, {
 			name: "expired",
-			user: ed25519User{Id: 1},
+			user: ed25519User{ID: 1},
 			manager: func() *Ed25519Manager[ed25519User] {
 				manager, err := NewEd25519ManagerBuilder[ed25519User](priPem, pubPem).
 					ClaimsConfig(NewClaimsConfig(WithExpiration(time.Millisecond))).
@@ -58,7 +60,7 @@ func TestEd25519Manager(t *testing.T) {
 			wantDecryptErr: jwt.ErrTokenExpired,
 		}, {
 			name: "with issuer",
-			user: ed25519User{Id: 1},
+			user: ed25519User{ID: 1},
 			manager: func() *Ed25519Manager[ed25519User] {
 				cfg := NewClaimsConfig(WithExpiration(time.Minute), WithIssuer("test-issuer"))
 				manager, err := NewEd25519ManagerBuilder[ed25519User](priPem, pubPem).
@@ -75,6 +77,8 @@ func TestEd25519Manager(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			token, err := tc.manager.Encrypt(tc.user)
 			assert.Equal(t, tc.wantEncryptErr, err)
 			if err != nil {
@@ -94,10 +98,12 @@ func TestEd25519Manager(t *testing.T) {
 }
 
 func TestEd25519Manager_InvalidToken(t *testing.T) {
+	t.Parallel()
+
 	manager, err := NewEd25519ManagerBuilder[ed25519User](priPem, pubPem).Build()
 	require.NoError(t, err)
 
-	_, err = manager.Encrypt(ed25519User{Id: 1})
+	_, err = manager.Encrypt(ed25519User{ID: 1})
 	require.NoError(t, err)
 
 	_, err = manager.Decrypt("invalid token")

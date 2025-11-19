@@ -37,12 +37,12 @@ func (rc *RefCopier[S, D]) createFieldNode(srcTyp, dstTyp reflect.Type, root *fi
 			srcFd := srcTyp.Field(srcIdx)
 
 			if srcFd.Type.Kind() == reflect.Pointer && srcFd.Type.Elem().Kind() == reflect.Pointer {
-				// pointer to pointer
+				// pointer to pointer.
 				return errPtrToPtr(srcFd.Name)
 			}
 
 			if dstFd.Type.Kind() == reflect.Pointer && dstFd.Type.Elem().Kind() == reflect.Pointer {
-				// pointer to pointer
+				// pointer to pointer.
 				return errPtrToPtr(dstFd.Name)
 			}
 
@@ -64,22 +64,23 @@ func (rc *RefCopier[S, D]) createFieldNode(srcTyp, dstTyp reflect.Type, root *fi
 				dstFdTyp = dstFdTyp.Elem()
 			}
 
-			if isBuiltinType(srcFdTyp.Kind()) {
-				// builtin type, node is leaf node
-			} else if rc.isAtomicType(srcFdTyp) {
-				// is atomic type, node is leaf node
-			} else if srcFdTyp.Kind() == reflect.Struct {
-				// is struct type
+			switch {
+			case isBuiltinType(srcFdTyp.Kind()):
+				// builtin type, node is leaf node.
+			case rc.isAtomicType(srcFdTyp):
+				// is atomic type, node is leaf node.
+			case srcFdTyp.Kind() == reflect.Struct:
+				// is struct type.
 				if err := rc.createFieldNode(srcFdTyp, dstFdTyp, &node); err != nil {
 					return err
 				}
-			} else {
-				// is not builtin type, not struct type, not atomic type
-				// can not copy it, skip
+			default:
+				// is not builtin type, not struct type, not atomic type.
+				// can not copy it, skip.
 				continue
 			}
 
-			// add node to root.fields
+			// add node to root.fields.
 			root.fields = append(root.fields, node)
 		}
 	}
@@ -142,64 +143,84 @@ func (rc *RefCopier[S, D]) copyNode(srcTyp reflect.Type, srcVal reflect.Value, d
 	oriSrcVal := srcVal
 	oriDstVal := dstVal
 
-	if srcVal.Kind() == reflect.Pointer {
-		if srcVal.IsNil() {
-			return nil
-		}
-		srcVal = srcVal.Elem()
-		srcTyp = srcTyp.Elem()
-	}
-
-	if dstVal.Kind() == reflect.Pointer {
-		if dstVal.IsNil() {
-			dstVal.Set(reflect.New(dstTyp.Elem()))
-		}
-
-		dstVal = dstVal.Elem()
-		dstTyp = dstTyp.Elem()
-	}
-
-	if len(root.fields) == 0 {
-		fdName := root.name
-		if !dstVal.CanSet() {
-			return nil
-		}
-
-		convertFunc, ok := cc.covertFds[fdName]
-		if !ok {
-			if srcTyp != dstTyp {
-				return errFieldTypeMismatch(fdName, srcTyp, dstTyp)
-			}
-
-			if srcVal.IsZero() {
-				return nil
-			}
-
-			dstVal.Set(srcVal)
-			return nil
-		}
-
-		if !oriDstVal.CanSet() {
-			return nil
-		}
-
-		srcConverted, err := convertFunc(oriSrcVal.Interface())
-		if err != nil {
-			return err
-		}
-
-		srcConvTyp := reflect.TypeOf(srcConverted)
-		srcConvVal := reflect.ValueOf(srcConverted)
-
-		if srcConvTyp != oriDstVal.Type() {
-			return errFieldTypeMismatch(fdName, srcConvTyp, oriDstVal.Type())
-		}
-
-		oriDstVal.Set(srcConvVal)
-
+	var ok bool
+	srcTyp, srcVal, ok = rc.derefSrc(srcTyp, srcVal)
+	if !ok {
 		return nil
 	}
 
+	dstTyp, dstVal = rc.derefDst(dstTyp, dstVal)
+	if len(root.fields) == 0 {
+		return rc.copyLeafNode(srcTyp, srcVal, dstTyp, dstVal, oriSrcVal, oriDstVal, root, cc)
+	}
+
+	return rc.copyStructNode(srcTyp, srcVal, dstTyp, dstVal, root, cc)
+}
+
+func (rc *RefCopier[S, D]) derefSrc(typ reflect.Type, val reflect.Value) (reflect.Type, reflect.Value, bool) {
+	if val.Kind() == reflect.Pointer {
+		if val.IsNil() {
+			return nil, reflect.Value{}, false
+		}
+		return typ.Elem(), val.Elem(), true
+	}
+	return typ, val, true
+}
+
+func (rc *RefCopier[S, D]) derefDst(typ reflect.Type, val reflect.Value) (reflect.Type, reflect.Value) {
+	if val.Kind() == reflect.Pointer {
+		if val.IsNil() {
+			val.Set(reflect.New(typ.Elem()))
+		}
+		return typ.Elem(), val.Elem()
+	}
+	return typ, val
+}
+
+func (rc *RefCopier[S, D]) copyLeafNode(
+	srcTyp reflect.Type, srcVal reflect.Value,
+	dstTyp reflect.Type, dstVal reflect.Value,
+	oriSrcVal, oriDstVal reflect.Value,
+	root *fieldNode,
+	cc copyConf,
+) error {
+	fdName := root.name
+	if !dstVal.CanSet() {
+		return nil
+	}
+
+	convertFunc, ok := cc.covertFds[fdName]
+	if !ok {
+		if srcTyp != dstTyp {
+			return errFieldTypeMismatch(fdName, srcTyp, dstTyp)
+		}
+		if srcVal.IsZero() {
+			return nil
+		}
+		dstVal.Set(srcVal)
+		return nil
+	}
+
+	if !oriDstVal.CanSet() {
+		return nil
+	}
+
+	srcConverted, err := convertFunc(oriSrcVal.Interface())
+	if err != nil {
+		return err
+	}
+
+	srcConvTyp := reflect.TypeOf(srcConverted)
+	srcConvVal := reflect.ValueOf(srcConverted)
+	if srcConvTyp != oriDstVal.Type() {
+		return errFieldTypeMismatch(fdName, srcConvTyp, oriDstVal.Type())
+	}
+
+	oriDstVal.Set(srcConvVal)
+	return nil
+}
+
+func (rc *RefCopier[S, D]) copyStructNode(srcTyp reflect.Type, srcVal reflect.Value, dstTyp reflect.Type, dstVal reflect.Value, root *fieldNode, cc copyConf) error {
 	for _, field := range root.fields {
 		if cc.InIgnore(field.name) {
 			continue
@@ -215,7 +236,6 @@ func (rc *RefCopier[S, D]) copyNode(srcTyp reflect.Type, srcVal reflect.Value, d
 			return err
 		}
 	}
-
 	return nil
 }
 

@@ -4,6 +4,4 @@ import (
 	"errors"
 )
 
-var (
-	ErrNilComparator = errors.New("[jit] comparator can not be nil")
-)
+var ErrNilComparator = errors.New("[jit] comparator can not be nil")

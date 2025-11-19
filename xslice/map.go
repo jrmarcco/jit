@@ -41,16 +41,6 @@ func ToMapWithVal[E any, K comparable, V any](slice []E, fn func(elem E) (K, V))
 	return res
 }
 
-// toMap converts a slice to a map.
-func toMap[T comparable](slice []T) map[T]struct{} {
-	m := make(map[T]struct{})
-	for _, v := range slice {
-		// use empty struct to save memory
-		m[v] = struct{}{}
-	}
-	return m
-}
-
 // deDuplicateFunc returns a slice of unique elements.
 func deDuplicateFunc[T comparable](slice []T, eq eqFunc[T]) []T {
 	res := make([]T, 0, len(slice))
@@ -62,7 +52,7 @@ func deDuplicateFunc[T comparable](slice []T, eq eqFunc[T]) []T {
 	return res
 }
 
-// deDuplicate returns a slice of unique elements.
+// deDuplicate returns a slice of unique elements without preserving the order.
 func deDuplicate[T comparable](slice []T) []T {
 	m := toMap(slice)
 	res := make([]T, 0, len(m))
@@ -70,4 +60,13 @@ func deDuplicate[T comparable](slice []T) []T {
 		res = append(res, k)
 	}
 	return res
+}
+
+// toMap converts a slice to a map.
+func toMap[T comparable](slice []T) map[T]struct{} {
+	m := make(map[T]struct{})
+	for _, v := range slice {
+		m[v] = struct{}{}
+	}
+	return m
 }

@@ -44,7 +44,8 @@ func (cal *CowArrayList[T]) Append(vals ...T) error {
 	newVals := make([]T, length, length+len(vals))
 	copy(newVals, cal.vals)
 
-	cal.vals = append(newVals, vals...)
+	newVals = append(newVals, vals...)
+	cal.vals = newVals
 	return nil
 }
 

@@ -131,6 +131,7 @@ func (sl *SkipList[T]) Exists(target T) bool {
 
 func (sl *SkipList[T]) randLevel() int {
 	level := 1
+	//nolint:gosec // G404: math/rand is sufficient for skip list balancing
 	for rand.Float64() < 0.25 && level < MaxLevel {
 		level++
 	}
@@ -200,7 +201,7 @@ func NewSkipList[T any](cmp jit.Comparator[T]) *SkipList[T] {
 }
 
 func SkipListOf[T any](cmp jit.Comparator[T], slice []T) *SkipList[T] {
-	sl := NewSkipList[T](cmp)
+	sl := NewSkipList(cmp)
 	for _, v := range slice {
 		sl.Insert(v)
 	}

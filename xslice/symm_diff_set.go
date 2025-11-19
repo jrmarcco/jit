@@ -1,7 +1,7 @@
 package xslice
 
 // SymmDiffSetFunc symmetric difference of two slices
-func SymmDiffSetFunc[T comparable](src []T, dst []T, eq eqFunc[T]) []T {
+func SymmDiffSetFunc[T comparable](src, dst []T, eq eqFunc[T]) []T {
 	res := []T{}
 
 	// find elements not in src
@@ -22,7 +22,7 @@ func SymmDiffSetFunc[T comparable](src []T, dst []T, eq eqFunc[T]) []T {
 }
 
 // SymmDiffSet symmetric difference of two slices
-func SymmDiffSet[T comparable](src []T, dst []T) []T {
+func SymmDiffSet[T comparable](src, dst []T) []T {
 	srcMap, dstMap := toMap(src), toMap(dst)
 
 	for k := range dstMap {

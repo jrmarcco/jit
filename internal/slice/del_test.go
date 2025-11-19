@@ -8,6 +8,8 @@ import (
 )
 
 func TestDel(t *testing.T) {
+	t.Parallel()
+
 	testCases := []struct {
 		name    string
 		slice   []int
@@ -56,8 +58,9 @@ func TestDel(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			res, err := Del(tc.slice, tc.index)
+			t.Parallel()
 
+			res, err := Del(tc.slice, tc.index)
 			assert.Equal(t, tc.wantErr, err)
 			if err != nil {
 				return

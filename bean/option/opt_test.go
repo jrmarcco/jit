@@ -14,6 +14,8 @@ type example struct {
 }
 
 func TestApply(t *testing.T) {
+	t.Parallel()
+
 	e := &example{}
 	Apply(e, func(e *example) {
 		e.Int = 1
@@ -35,6 +37,8 @@ func withStrErr(str string) OptErr[example] {
 }
 
 func TestApplyErr(t *testing.T) {
+	t.Parallel()
+
 	e := &example{}
 	err := ApplyErr(e, func(e *example) error {
 		e.Int = 1

@@ -36,13 +36,22 @@ func (b *DefaultManagerBuilder[T]) SigningMethod(signingMethod jwt.SigningMethod
 	return b
 }
 
-func NewDefaultManagerBuilder[T any](encryptKey string, decryptKey string) *DefaultManagerBuilder[T] {
+func NewDefaultManagerBuilder[T any](encryptKey, decryptKey string) *DefaultManagerBuilder[T] {
+	const expiration = 24 * time.Hour
 	return &DefaultManagerBuilder[T]{
-		config: NewClaimsConfig(WithExpiration(24 * time.Hour)),
+		config: NewClaimsConfig(WithExpiration(expiration)),
 
 		signingMethod: jwt.SigningMethodHS256,
 		encryptKey:    encryptKey,
 		decryptKey:    decryptKey,
+	}
+}
+
+func NewDefaultVerifierBuilder[T any](decryptKey string) *DefaultManagerBuilder[T] {
+	const expiration = 24 * time.Hour
+	return &DefaultManagerBuilder[T]{
+		config:     NewClaimsConfig(WithExpiration(expiration)),
+		decryptKey: decryptKey,
 	}
 }
 
@@ -76,7 +85,7 @@ func (m *DefaultManager[T]) Decrypt(token string, opts ...jwt.ParserOption) (Cus
 	jwtToken, err := jwt.ParseWithClaims(
 		token,
 		&CustomClaims[T]{},
-		func(token *jwt.Token) (any, error) {
+		func(_ *jwt.Token) (any, error) {
 			return []byte(m.decryptKey), nil
 		},
 		opts...,

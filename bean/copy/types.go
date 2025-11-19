@@ -53,7 +53,8 @@ func ConvertFd[S any, D any](fd string, converter converter.Converter[S, D]) opt
 		}
 
 		if cc.covertFds == nil {
-			cc.covertFds = make(map[string]convertFunc, 8)
+			const defaultSize = 8
+			cc.covertFds = make(map[string]convertFunc, defaultSize)
 		}
 
 		cc.covertFds[fd] = func(src any) (any, error) {

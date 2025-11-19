@@ -9,6 +9,8 @@ import (
 )
 
 func TestSymmDiffSetFunc(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name string
 		src  []int
@@ -49,12 +51,18 @@ func TestSymmDiffSetFunc(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		res := SymmDiffSetFunc(tc.src, tc.dst, func(a, b int) bool { return a == b })
-		assert.ElementsMatch(t, tc.want, res)
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			res := SymmDiffSetFunc(tc.src, tc.dst, func(a, b int) bool { return a == b })
+			assert.ElementsMatch(t, tc.want, res)
+		})
 	}
 }
 
 func TestSymmDiffSet(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name string
 		src  []int
@@ -95,8 +103,12 @@ func TestSymmDiffSet(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		res := SymmDiffSet(tc.src, tc.dst)
-		assert.ElementsMatch(t, tc.want, res)
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			res := SymmDiffSet(tc.src, tc.dst)
+			assert.ElementsMatch(t, tc.want, res)
+		})
 	}
 }
 

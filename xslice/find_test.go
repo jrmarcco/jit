@@ -12,6 +12,8 @@ var mf matchFunc[int] = func(v int) bool {
 }
 
 func TestFind(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name    string
 		slice   []int
@@ -48,6 +50,8 @@ func TestFind(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			res, ok := Find(tc.slice, tc.match)
 			assert.Equal(t, tc.wantOk, ok)
 
@@ -61,6 +65,8 @@ func TestFind(t *testing.T) {
 }
 
 func TestFindAll(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name    string
 		slice   []int
@@ -92,6 +98,8 @@ func TestFindAll(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			res := FindAll(tc.slice, tc.match)
 			assert.Equal(t, tc.wantRes, res)
 		})

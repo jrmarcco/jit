@@ -13,6 +13,8 @@ var cmp = jit.Comparator[int](func(a, b int) int {
 })
 
 func TestTreeSet_Add(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name      string
 		cmp       jit.Comparator[int]
@@ -49,6 +51,8 @@ func TestTreeSet_Add(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			s, err := NewTreeSet(tc.cmp)
 			if err != nil {
 				assert.Equal(t, tc.wantErr, err)
@@ -65,6 +69,8 @@ func TestTreeSet_Add(t *testing.T) {
 }
 
 func TestTreeSet_Del(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name      string
 		initElems []int
@@ -92,6 +98,8 @@ func TestTreeSet_Del(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			s, err := NewTreeSet(cmp)
 			require.NoError(t, err)
 
@@ -109,6 +117,8 @@ func TestTreeSet_Del(t *testing.T) {
 }
 
 func TestTreeSet_Exist(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name      string
 		initElems []int
@@ -130,6 +140,8 @@ func TestTreeSet_Exist(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			s, err := NewTreeSet(cmp)
 			require.NoError(t, err)
 

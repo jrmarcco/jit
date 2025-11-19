@@ -9,7 +9,8 @@ type Pool[T any] struct {
 
 // Get gets a new object from the pool.
 func (p *Pool[T]) Get() T {
-	return p.p.Get().(T)
+	v, _ := p.p.Get().(T)
+	return v
 }
 
 // Put puts an object back into the pool.

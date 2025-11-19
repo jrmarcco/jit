@@ -25,10 +25,17 @@ func (b *Ed25519ManagerBuilder[T]) ClaimsConfig(config ClaimsConfig) *Ed25519Man
 }
 
 func (b *Ed25519ManagerBuilder[T]) Build() (*Ed25519Manager[T], error) {
-	priKey, err := loadPrivateKey(b.encryptKey)
-	if err != nil {
-		return nil, err
+	var (
+		priKey ed25519.PrivateKey
+		err    error
+	)
+	if b.encryptKey != "" {
+		priKey, err = loadPrivateKey(b.encryptKey)
+		if err != nil {
+			return nil, err
+		}
 	}
+
 	pubKey, err := loadPublicKey(b.decryptKey)
 	if err != nil {
 		return nil, err
@@ -41,10 +48,22 @@ func (b *Ed25519ManagerBuilder[T]) Build() (*Ed25519Manager[T], error) {
 	}, nil
 }
 
-func NewEd25519ManagerBuilder[T any](encryptKey string, decryptKey string) *Ed25519ManagerBuilder[T] {
+// NewEd25519ManagerBuilder 创建 ed25519 管理器。
+func NewEd25519ManagerBuilder[T any](encryptKey, decryptKey string) *Ed25519ManagerBuilder[T] {
+	const expiration = 24 * time.Hour
 	return &Ed25519ManagerBuilder[T]{
-		config:     NewClaimsConfig(WithExpiration(24 * time.Hour)), // 默认 24 小时过期
+		config:     NewClaimsConfig(WithExpiration(expiration)), // 默认 24 小时过期
 		encryptKey: encryptKey,
+		decryptKey: decryptKey,
+	}
+}
+
+// NewEd25519VerifierBuilder 用于创建只包含 public key 的 ed25519 管理器。
+// 用于只需要验证 jwt 而不需要签发 jwt 的场景。
+func NewEd25519VerifierBuilder[T any](decryptKey string) *Ed25519ManagerBuilder[T] {
+	const expiration = 24 * time.Hour
+	return &Ed25519ManagerBuilder[T]{
+		config:     NewClaimsConfig(WithExpiration(expiration)),
 		decryptKey: decryptKey,
 	}
 }
@@ -61,7 +80,12 @@ func loadPrivateKey(priPem string) (ed25519.PrivateKey, error) {
 	if err != nil {
 		return nil, fmt.Errorf("[jit] failed to parse private key: %w", err)
 	}
-	return priKey.(ed25519.PrivateKey), nil
+
+	rtn, ok := priKey.(ed25519.PrivateKey)
+	if !ok {
+		return nil, fmt.Errorf("[jit] private key is not ed25519")
+	}
+	return rtn, nil
 }
 
 // loadPublicKey 加载公钥。
@@ -74,7 +98,12 @@ func loadPublicKey(pubPem string) (ed25519.PublicKey, error) {
 	if err != nil {
 		return nil, fmt.Errorf("[jit] failed to parse public key: %w", err)
 	}
-	return publicKey.(ed25519.PublicKey), nil
+
+	rtn, ok := publicKey.(ed25519.PublicKey)
+	if !ok {
+		return nil, fmt.Errorf("[jit] public key is not ed25519")
+	}
+	return rtn, nil
 }
 
 var _ Manager[any] = (*Ed25519Manager[any])(nil)
@@ -87,6 +116,9 @@ type Ed25519Manager[T any] struct {
 }
 
 func (m *Ed25519Manager[T]) Encrypt(data T) (string, error) {
+	if m.priKey == nil {
+		return "", fmt.Errorf("[jit] private key not available")
+	}
 	now := time.Now()
 	cc := &CustomClaims[T]{
 		Data: data,

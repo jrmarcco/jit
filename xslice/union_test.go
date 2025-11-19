@@ -9,6 +9,8 @@ import (
 )
 
 func TestUnionSetFunc(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name string
 		src  []int
@@ -40,6 +42,8 @@ func TestUnionSetFunc(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			res := UnionSetFunc(tc.src, tc.dst, func(src, dst int) bool { return src == dst })
 			assert.ElementsMatch(t, tc.want, res)
 		})
@@ -47,6 +51,8 @@ func TestUnionSetFunc(t *testing.T) {
 }
 
 func TestUnionSet(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name string
 		src  []int
@@ -78,6 +84,8 @@ func TestUnionSet(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			res := UnionSet(tc.src, tc.dst)
 			assert.ElementsMatch(t, tc.want, res)
 		})

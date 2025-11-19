@@ -11,12 +11,13 @@ import (
 )
 
 type defaultUser struct {
-	Id uint64
+	ID uint64
 }
 
 func TestDefaultManager(t *testing.T) {
-	key := "test-key"
+	t.Parallel()
 
+	key := "test-key"
 	tcs := []struct {
 		name           string
 		user           defaultUser
@@ -27,7 +28,7 @@ func TestDefaultManager(t *testing.T) {
 	}{
 		{
 			name: "basic",
-			user: defaultUser{Id: 1},
+			user: defaultUser{ID: 1},
 			manager: func() *DefaultManager[defaultUser] {
 				return NewDefaultManagerBuilder[defaultUser](key, key).Build()
 			}(),
@@ -36,7 +37,7 @@ func TestDefaultManager(t *testing.T) {
 			wantDecryptErr: nil,
 		}, {
 			name: "expired",
-			user: defaultUser{Id: 1},
+			user: defaultUser{ID: 1},
 			manager: func() *DefaultManager[defaultUser] {
 				return NewDefaultManagerBuilder[defaultUser](key, key).
 					ClaimsConfig(NewClaimsConfig(WithExpiration(time.Millisecond))).
@@ -47,7 +48,7 @@ func TestDefaultManager(t *testing.T) {
 			wantDecryptErr: jwt.ErrTokenExpired,
 		}, {
 			name: "with issuer",
-			user: defaultUser{Id: 1},
+			user: defaultUser{ID: 1},
 			manager: func() *DefaultManager[defaultUser] {
 				cfg := NewClaimsConfig(WithExpiration(time.Minute), WithIssuer("test-issuer"))
 				return NewDefaultManagerBuilder[defaultUser](key, key).
@@ -62,6 +63,8 @@ func TestDefaultManager(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			token, err := tc.manager.Encrypt(tc.user)
 			assert.Equal(t, tc.wantEncryptErr, err)
 			if err != nil {
@@ -81,12 +84,13 @@ func TestDefaultManager(t *testing.T) {
 }
 
 func TestDefaultManager_InvalidToken(t *testing.T) {
-	key := "test-key"
+	t.Parallel()
 
+	key := "test-key"
 	manager := NewDefaultManagerBuilder[defaultUser](key, key).Build()
 
 	var err error
-	_, err = manager.Encrypt(defaultUser{Id: 1})
+	_, err = manager.Encrypt(defaultUser{ID: 1})
 	require.NoError(t, err)
 
 	_, err = manager.Decrypt("invalid token")

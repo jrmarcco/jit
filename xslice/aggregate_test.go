@@ -9,6 +9,8 @@ import (
 )
 
 func TestMax(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name    string
 		slice   []int
@@ -50,6 +52,8 @@ func TestMax(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			res, err := Max(tc.slice)
 			assert.Equal(t, tc.wantErr, err)
 
@@ -63,6 +67,8 @@ func TestMax(t *testing.T) {
 }
 
 func TestMin(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name    string
 		slice   []int
@@ -103,6 +109,8 @@ func TestMin(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			res, err := Min(tc.slice)
 			assert.Equal(t, tc.wantErr, err)
 
@@ -116,6 +124,8 @@ func TestMin(t *testing.T) {
 }
 
 func TestSum(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name    string
 		slice   []int
@@ -150,6 +160,8 @@ func TestSum(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			res := Sum(tc.slice)
 			assert.Equal(t, tc.wantRes, res)
 		})

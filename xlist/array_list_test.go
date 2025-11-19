@@ -9,6 +9,8 @@ import (
 )
 
 func TestArrayList_Insert(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name    string
 		al      *ArrayList[int]
@@ -64,6 +66,8 @@ func TestArrayList_Insert(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			err := tc.al.Insert(tc.index, tc.value)
 			assert.Equal(t, err, tc.wantErr)
 			assert.Equal(t, tc.al.Len(), tc.wantLen)
@@ -76,6 +80,8 @@ func TestArrayList_Insert(t *testing.T) {
 }
 
 func TestArrayList_Append(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name    string
 		al      *ArrayList[int]
@@ -112,6 +118,8 @@ func TestArrayList_Append(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			err := tc.al.Append(tc.values...)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.al.ToSlice(), tc.wantRes)
@@ -121,6 +129,8 @@ func TestArrayList_Append(t *testing.T) {
 }
 
 func TestArrayList_Del(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name    string
 		al      *ArrayList[int]
@@ -159,6 +169,8 @@ func TestArrayList_Del(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			err := tc.al.Del(tc.index)
 			assert.Equal(t, err, tc.wantErr)
 			assert.Equal(t, tc.al.ToSlice(), tc.wantRes)
@@ -167,6 +179,8 @@ func TestArrayList_Del(t *testing.T) {
 }
 
 func TestArrayList_Set(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name    string
 		al      *ArrayList[int]
@@ -205,8 +219,9 @@ func TestArrayList_Set(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
-			err := tc.al.Set(tc.index, tc.value)
+			t.Parallel()
 
+			err := tc.al.Set(tc.index, tc.value)
 			assert.Equal(t, err, tc.wantErr)
 			assert.Equal(t, tc.al.ToSlice(), tc.wantRes)
 		})
@@ -214,6 +229,8 @@ func TestArrayList_Set(t *testing.T) {
 }
 
 func TestArrayList_Get(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name    string
 		al      *ArrayList[int]
@@ -251,6 +268,8 @@ func TestArrayList_Get(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			res, err := tc.al.Get(tc.index)
 			assert.Equal(t, err, tc.wantErr)
 

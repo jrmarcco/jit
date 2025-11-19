@@ -14,6 +14,8 @@ func cmp() jit.Comparator[int] {
 }
 
 func TestNewTreeMapWithMap(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name     string
 		cmp      jit.Comparator[int]
@@ -72,8 +74,9 @@ func TestNewTreeMapWithMap(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
-			treeMap, err := NewTreeMapWithMap(tc.cmp, tc.m)
+			t.Parallel()
 
+			treeMap, err := NewTreeMapWithMap(tc.cmp, tc.m)
 			if err != nil {
 				assert.Equal(t, tc.wantErr, err)
 				return
@@ -87,6 +90,7 @@ func TestNewTreeMapWithMap(t *testing.T) {
 }
 
 func TestTreeMap_Del(t *testing.T) {
+	t.Parallel()
 
 	type kv struct {
 		key int
@@ -149,6 +153,8 @@ func TestTreeMap_Del(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			m := xslice.ToMapWithVal(tc.initData, func(elem kv) (int, string) { return elem.key, elem.val })
 			treeMap, err := NewTreeMapWithMap(cmp(), m)
 			require.NoError(t, err)
@@ -163,12 +169,13 @@ func TestTreeMap_Del(t *testing.T) {
 			}
 
 			assert.Equal(t, tc.wantVals, treeMap.Vals())
-
 		})
 	}
 }
 
 func TestTreeMap_Get(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name    string
 		m       map[int]string
@@ -198,6 +205,8 @@ func TestTreeMap_Get(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			treeMap, err := NewTreeMapWithMap(cmp(), tc.m)
 			require.NoError(t, err)
 

@@ -139,6 +139,8 @@ func TestRefCopier_Copy(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			dst, err := tc.copyFn()
 			if err != nil {
 				assert.Equal(t, tc.wantErr, err)
@@ -166,11 +168,9 @@ type basicDst struct {
 	StrVal string
 }
 
-type noFdSrc struct {
-}
+type noFdSrc struct{}
 
-type noFdDst struct {
-}
+type noFdDst struct{}
 
 type priFdSrc struct {
 	IntVal int

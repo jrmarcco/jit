@@ -13,7 +13,9 @@ func (m *Map[K, V]) Load(key K) (V, bool) {
 		var zero V
 		return zero, false
 	}
-	return v.(V), ok
+
+	val, _ := v.(V)
+	return val, true
 }
 
 func (m *Map[K, V]) Store(key K, val V) {
@@ -23,7 +25,8 @@ func (m *Map[K, V]) Store(key K, val V) {
 func (m *Map[K, V]) LoadOrStore(ket K, val V) (V, bool) {
 	v, ok := m.m.LoadOrStore(ket, val)
 	if v != nil {
-		return v.(V), ok
+		val, _ := v.(V)
+		return val, ok
 	}
 
 	var zero V
@@ -33,7 +36,8 @@ func (m *Map[K, V]) LoadOrStore(ket K, val V) (V, bool) {
 func (m *Map[K, V]) LoadAndDelete(key K) (V, bool) {
 	v, ok := m.m.LoadAndDelete(key)
 	if v != nil {
-		return v.(V), ok
+		val, _ := v.(V)
+		return val, ok
 	}
 
 	var zero V
@@ -52,11 +56,10 @@ func (m *Map[K, V]) Range(fn func(key K, val V) bool) {
 		)
 
 		if val != nil {
-			v = val.(V)
+			v, _ = val.(V)
 		}
-
 		if key != nil {
-			k = key.(K)
+			k, _ = key.(K)
 		}
 
 		return fn(k, v)

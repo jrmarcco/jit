@@ -36,13 +36,13 @@ func KeysVals[K comparable, V any](m map[K]V) []MapKV[K, V] {
 }
 
 func Merge[K comparable, V any](maps ...map[K]V) map[K]V {
-	defaultMergeFunc := func(first, second V) V {
+	defaultMergeFunc := func(_ V, second V) V {
 		return second
 	}
 	return MergeFunc(defaultMergeFunc, maps...)
 }
 
-func MergeFunc[K comparable, V any](mergeFunc func(first, second V) V, maps ...map[K]V) map[K]V {
+func MergeFunc[K comparable, V any](mergeFunc func(_ V, second V) V, maps ...map[K]V) map[K]V {
 	totalLen := 0
 	for _, m := range maps {
 		totalLen += len(m)

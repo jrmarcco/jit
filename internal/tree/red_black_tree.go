@@ -104,9 +104,9 @@ func (rbt *RBTree[K, V]) Vals() []V {
 }
 
 // Kvs returns the keys and values of the tree
-func (rbt *RBTree[K, V]) Kvs() ([]K, []V) {
-	keys := make([]K, 0, rbt.size)
-	vals := make([]V, 0, rbt.size)
+func (rbt *RBTree[K, V]) Kvs() (keys []K, vals []V) {
+	keys = make([]K, 0, rbt.size)
+	vals = make([]V, 0, rbt.size)
 
 	if rbt.root == nil {
 		return keys, vals
@@ -117,7 +117,7 @@ func (rbt *RBTree[K, V]) Kvs() ([]K, []V) {
 		vals = append(vals, node.val)
 	})
 
-	return keys, vals
+	return
 }
 
 // Iter to traversal all the tree node.
@@ -180,13 +180,14 @@ func (rbt *RBTree[K, V]) leftRotate(x *rbNode[K, V]) {
 	// node y's parent = node x's parent
 	y.parent = x.parent
 
-	if x.parent == nil {
+	switch {
+	case x.parent == nil:
 		// if node x's parent is nil, node x is root, change root to node y
 		rbt.root = y
-	} else if x == x.parent.left {
+	case x == x.parent.left:
 		// if node x is the left child, node y is the left child
 		x.parent.left = y
-	} else {
+	default:
 		// if node x is the right child, node y is the right child
 		x.parent.right = y
 	}
@@ -226,13 +227,14 @@ func (rbt *RBTree[K, V]) rightRotate(x *rbNode[K, V]) {
 	// node y's parent = node x's parent
 	y.parent = x.parent
 
-	if x.parent == nil {
+	switch {
+	case x.parent == nil:
 		// if node x's parent is nil, node x is root, change root to node y
 		rbt.root = y
-	} else if x == x.parent.right {
+	case x == x.parent.right:
 		// if node x is the right child, node y is the right child
 		x.parent.right = y
-	} else {
+	default:
 		// if node x is the left child, node y is the left child
 		x.parent.left = y
 	}
@@ -326,7 +328,7 @@ func (rbt *RBTree[K, V]) fixupInsertion(node *rbNode[K, V]) {
 //	  b(z)	r(x)  b(p)  b(q)					  b(z)	r(x)  b(p)  b(q)
 //
 // 1. change focus on node x's parent node b and uncle node d to black.
-func (rbt *RBTree[K, V]) fixupRedUncle(node *rbNode[K, V], uncle *rbNode[K, V]) *rbNode[K, V] {
+func (rbt *RBTree[K, V]) fixupRedUncle(node, uncle *rbNode[K, V]) *rbNode[K, V] {
 	grandparent := node.getGrandparent()
 
 	node.parent.setColor(black)
@@ -495,13 +497,14 @@ func (rbt *RBTree[K, V]) deleteNode(node *rbNode[K, V]) {
 	if replacement != nil {
 		// replace the deleted node with the replacement
 		replacement.parent = deletedNode.parent
-		if deletedNode.parent == nil {
+		switch {
+		case deletedNode.parent == nil:
 			// if the deleted node is the root, replace the root with the replacement
 			rbt.root = replacement
-		} else if deletedNode == deletedNode.parent.left {
+		case deletedNode == deletedNode.parent.left:
 			// if the deleted node is the left child of its parent, replace the deleted node with the replacement
 			deletedNode.parent.left = replacement
-		} else {
+		default:
 			// if the deleted node is the right child of its parent, replace the deleted node with the replacement
 			deletedNode.parent.right = replacement
 		}
@@ -527,12 +530,12 @@ func (rbt *RBTree[K, V]) deleteNode(node *rbNode[K, V]) {
 	}
 
 	if deletedNode.parent != nil {
-		if deletedNode == deletedNode.parent.left {
+		switch deletedNode {
+		case deletedNode.parent.left:
 			deletedNode.parent.left = nil
-		} else if deletedNode == deletedNode.parent.right {
+		case deletedNode.parent.right:
 			deletedNode.parent.right = nil
 		}
-
 		deletedNode.parent = nil
 	}
 }

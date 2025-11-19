@@ -58,12 +58,13 @@ func (a *AdaptiveTimeoutStrategy) getFailureCnt() int {
 	return cnt
 }
 
-func NewAdaptiveTimeoutStrategy(strategy Strategy, bufferSize int, threshold int) *AdaptiveTimeoutStrategy {
+func NewAdaptiveTimeoutStrategy(strategy Strategy, bufferSize, threshold int) *AdaptiveTimeoutStrategy {
+	const defaultTotalBit = 64
 	return &AdaptiveTimeoutStrategy{
 		strategy:   strategy,
 		threshold:  threshold,
 		bufferSize: bufferSize,
 		ringBuffer: make([]uint64, bufferSize),
-		totalBit:   uint64(64) & uint64(bufferSize),
+		totalBit:   uint64(defaultTotalBit) & uint64(bufferSize),
 	}
 }

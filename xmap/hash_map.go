@@ -103,13 +103,14 @@ func (h *HashMap[K, V]) Del(key K) (V, bool) {
 	level := 0
 	for headN != nil {
 		if headN.key.Equals(key) {
+			switch {
 			//  level == 0 means that the node is the root node of the hash bucket
-			if level == 0 && headN.next == nil {
+			case level == 0 && headN.next == nil:
 				// the hash bucket only has one node(root node)
 				delete(h.m, key.Hash())
-			} else if level == 0 && headN.next != nil {
+			case level == 0 && headN.next != nil:
 				h.m[key.Hash()] = headN.next
-			} else {
+			default:
 				preN.next = headN.next
 			}
 

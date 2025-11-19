@@ -6,9 +6,7 @@ import (
 	"reflect"
 )
 
-var (
-	errConvertFdTypeMismatch = errors.New("[jit] convert func type mismatch")
-)
+var errConvertFdTypeMismatch = errors.New("[jit] convert func type mismatch")
 
 func errInvalidType(want, got any) error {
 	return fmt.Errorf("[jit] invalid type: want %s, got %#v", want, got)

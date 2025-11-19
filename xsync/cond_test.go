@@ -1,22 +1,24 @@
 package xsync
 
 import (
-	"context"
-	"math/rand"
+	"crypto/rand"
+	"math/big"
 	"sync"
 	"testing"
 	"time"
 )
 
 func TestCond(t *testing.T) {
-	c := NewCond(&sync.Mutex{})
+	t.Parallel()
 
+	c := NewCond(&sync.Mutex{})
 	ready := 0
 
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		idx := i
 		go func(i int) {
-			time.Sleep(time.Duration(rand.Int63n(10)) * time.Second)
+			n, _ := rand.Int(rand.Reader, big.NewInt(10))
+			time.Sleep(time.Duration(n.Int64()) * time.Second)
 
 			c.L.Lock()
 			ready++
@@ -29,7 +31,7 @@ func TestCond(t *testing.T) {
 
 	c.L.Lock()
 	for ready != 10 {
-		_ = c.Wait(context.Background())
+		_ = c.Wait(t.Context())
 		t.Logf("waiter wake up once")
 	}
 	c.L.Unlock()
@@ -38,6 +40,7 @@ func TestCond(t *testing.T) {
 }
 
 func benchmarkCond(b *testing.B, waiterCnt int) {
+	b.Helper()
 	c := NewCond(&sync.Mutex{})
 	done := make(chan bool)
 	id := 0
@@ -57,7 +60,7 @@ func benchmarkCond(b *testing.B, waiterCnt int) {
 					id = 0
 					c.Broadcast()
 				} else {
-					_ = c.Wait(context.Background())
+					_ = c.Wait(b.Context())
 				}
 
 				c.L.Unlock()

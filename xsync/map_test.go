@@ -1,8 +1,9 @@
 package xsync
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type param struct {
@@ -11,6 +12,8 @@ type param struct {
 }
 
 func TestMap_Load(t *testing.T) {
+	t.Parallel()
+
 	p := &param{name: "first", val: 1}
 	empty := &param{}
 
@@ -66,6 +69,8 @@ func TestMap_Load(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			m := tc.m()
 			val, ok := m.Load(tc.key)
 			assert.Equal(t, tc.wantRes, ok)
@@ -75,7 +80,11 @@ func TestMap_Load(t *testing.T) {
 }
 
 func TestMap_LoadOrStore(t *testing.T) {
+	t.Parallel()
+
 	t.Run("store not nil value", func(t *testing.T) {
+		t.Parallel()
+
 		m := Map[string, *param]{}
 		p := &param{name: "first", val: 1}
 
@@ -85,6 +94,8 @@ func TestMap_LoadOrStore(t *testing.T) {
 	})
 
 	t.Run("load not nil value", func(t *testing.T) {
+		t.Parallel()
+
 		m := Map[string, *param]{}
 		p := &param{name: "first", val: 1}
 
@@ -95,10 +106,11 @@ func TestMap_LoadOrStore(t *testing.T) {
 		val, ok = m.LoadOrStore("first", &param{name: "second", val: 2})
 		assert.True(t, ok)
 		assert.Same(t, p, val)
-
 	})
 
 	t.Run("store nil value", func(t *testing.T) {
+		t.Parallel()
+
 		m := Map[string, *param]{}
 
 		val, ok := m.LoadOrStore("first", nil)
@@ -107,6 +119,8 @@ func TestMap_LoadOrStore(t *testing.T) {
 	})
 
 	t.Run("load nil value", func(t *testing.T) {
+		t.Parallel()
+
 		m := Map[string, *param]{}
 
 		val, ok := m.LoadOrStore("first", nil)
@@ -121,7 +135,11 @@ func TestMap_LoadOrStore(t *testing.T) {
 }
 
 func TestMap_LoadAndDelete(t *testing.T) {
+	t.Parallel()
+
 	t.Run("not nil value", func(t *testing.T) {
+		t.Parallel()
+
 		m := Map[string, *param]{}
 		p := &param{name: "first", val: 1}
 
@@ -137,6 +155,8 @@ func TestMap_LoadAndDelete(t *testing.T) {
 	})
 
 	t.Run("nil value", func(t *testing.T) {
+		t.Parallel()
+
 		m := Map[string, *param]{}
 		m.Store("first", nil)
 
@@ -151,6 +171,8 @@ func TestMap_LoadAndDelete(t *testing.T) {
 }
 
 func TestMap_Delete(t *testing.T) {
+	t.Parallel()
+
 	m := Map[string, *param]{}
 	p1 := &param{name: "first", val: 1}
 	p2 := &param{name: "second", val: 2}
@@ -173,7 +195,11 @@ func TestMap_Delete(t *testing.T) {
 }
 
 func TestMap_Range(t *testing.T) {
+	t.Parallel()
+
 	t.Run("pointer item", func(t *testing.T) {
+		t.Parallel()
+
 		m := Map[string, *param]{}
 		p1 := &param{name: "first", val: 1}
 		p2 := &param{name: "second", val: 2}
@@ -202,6 +228,8 @@ func TestMap_Range(t *testing.T) {
 	})
 
 	t.Run("struct item", func(t *testing.T) {
+		t.Parallel()
+
 		m := Map[string, param]{}
 		p1 := param{name: "first", val: 1}
 		p2 := param{name: "second", val: 2}

@@ -7,6 +7,8 @@ import (
 )
 
 func TestBuiltInMap_Put(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name string
 		key  int
@@ -28,6 +30,8 @@ func TestBuiltInMap_Put(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			m := newBuiltInMap(tc.data)
 			err := m.Put(tc.key, tc.val)
 			assert.Nil(t, err)
@@ -42,6 +46,8 @@ func TestBuiltInMap_Put(t *testing.T) {
 }
 
 func TestBuiltInMap_Del(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name    string
 		key     int
@@ -72,6 +78,8 @@ func TestBuiltInMap_Del(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			m := newBuiltInMap(tc.data)
 			gotVal, gotRes := m.Del(tc.key)
 			assert.Equal(t, tc.wantRes, gotRes)
@@ -87,6 +95,8 @@ func TestBuiltInMap_Del(t *testing.T) {
 }
 
 func TestBuiltInMap_Get(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name    string
 		key     int
@@ -117,6 +127,8 @@ func TestBuiltInMap_Get(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			m := newBuiltInMap(tc.data)
 			gotVal, gotRes := m.Get(tc.key)
 			assert.Equal(t, tc.wantRes, gotRes)
@@ -130,6 +142,8 @@ func TestBuiltInMap_Get(t *testing.T) {
 }
 
 func TestBuiltInMap_Keys(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name    string
 		data    map[string]int
@@ -152,6 +166,8 @@ func TestBuiltInMap_Keys(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			m := newBuiltInMap(tc.data)
 			assert.ElementsMatch(t, tc.wantRes, m.Keys())
 		})
@@ -159,6 +175,8 @@ func TestBuiltInMap_Keys(t *testing.T) {
 }
 
 func TestBuiltInMap_Vals(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name    string
 		data    map[string]int
@@ -181,6 +199,8 @@ func TestBuiltInMap_Vals(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			m := newBuiltInMap(tc.data)
 			assert.ElementsMatch(t, tc.wantRes, m.Vals())
 		})
@@ -188,6 +208,8 @@ func TestBuiltInMap_Vals(t *testing.T) {
 }
 
 func TestBuiltInMap_Size(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name    string
 		data    map[string]int
@@ -210,6 +232,8 @@ func TestBuiltInMap_Size(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			m := newBuiltInMap(tc.data)
 			assert.Equal(t, tc.wantRes, m.Size())
 		})

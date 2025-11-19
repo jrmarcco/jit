@@ -8,6 +8,8 @@ import (
 )
 
 func TestKeys(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name string
 		m    map[int]int
@@ -35,6 +37,8 @@ func TestKeys(t *testing.T) {
 }
 
 func TestVals(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name string
 		m    map[int]int
@@ -62,6 +66,8 @@ func TestVals(t *testing.T) {
 }
 
 func TestKeysVals(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name string
 		m    map[int]int
@@ -89,6 +95,8 @@ func TestKeysVals(t *testing.T) {
 }
 
 func TestToMap(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name    string
 		keys    []int
@@ -148,6 +156,8 @@ func TestToMap(t *testing.T) {
 }
 
 func TestMerge(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name    string
 		maps    []map[int]int
@@ -197,6 +207,8 @@ func TestMerge(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			res := Merge(tc.maps...)
 			assert.Equal(t, tc.wantRes, res)
 		})
@@ -204,6 +216,8 @@ func TestMerge(t *testing.T) {
 }
 
 func TestMergeFunc(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name      string
 		maps      []map[int]int
@@ -266,6 +280,8 @@ func TestMergeFunc(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			res := MergeFunc(tc.mergeFunc, tc.maps...)
 			assert.Equal(t, tc.wantRes, res)
 		})

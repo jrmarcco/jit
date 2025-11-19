@@ -2,12 +2,15 @@ package xslice
 
 import (
 	"fmt"
+	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestIntersectSetFunc(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name    string
 		src     []int
@@ -39,6 +42,8 @@ func TestIntersectSetFunc(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			res := IntersectSetFunc(tc.src, tc.dst, func(src, dst int) bool { return src == dst })
 			assert.ElementsMatch(t, tc.wantRes, res)
 		})
@@ -46,6 +51,8 @@ func TestIntersectSetFunc(t *testing.T) {
 }
 
 func TestIntersectSet(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name    string
 		src     []int
@@ -77,6 +84,8 @@ func TestIntersectSet(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			res := IntersectSet(tc.src, tc.dst)
 			assert.ElementsMatch(t, tc.wantRes, res)
 		})
@@ -92,9 +101,10 @@ func ExampleIntersectSetFunc() {
 }
 
 func ExampleIntersectSet() {
-	src := []int{1, 2, 3, 4, 5}
-	dst := []int{4, 5, 6, 7, 8}
+	src := []int{1, 2, 3, 4, 5, 6, 6, 7}
+	dst := []int{2, 3, 4, 5, 6, 7, 8}
 	res := IntersectSet(src, dst)
+	sort.Ints(res)
 	fmt.Println(res)
-	// Output: [4 5]
+	// Output: [2 3 4 5 6 7]
 }

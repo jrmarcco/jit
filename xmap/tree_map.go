@@ -51,8 +51,9 @@ func (tm *TreeMap[K, V]) Iter(visitFunc func(key K, val V) bool) {
 	tm.tree.Iter(visitFunc)
 }
 
-func (tm *TreeMap[K, V]) KeyVals() ([]K, []V) {
-	return tm.tree.Kvs()
+func (tm *TreeMap[K, V]) KeyVals() (keys []K, vals []V) {
+	keys, vals = tm.tree.Kvs()
+	return keys, vals
 }
 
 func NewTreeMap[K any, V any](cmp jit.Comparator[K]) (*TreeMap[K, V], error) {

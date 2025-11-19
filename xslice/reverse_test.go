@@ -8,6 +8,8 @@ import (
 )
 
 func TestReverseOfInt(t *testing.T) {
+	t.Parallel()
+
 	testCases := []struct {
 		name  string
 		slice []int
@@ -30,6 +32,8 @@ func TestReverseOfInt(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			res := Reverse(tc.slice)
 			assert.ElementsMatch(t, tc.want, res)
 			assert.NotSame(t, &tc.slice, &res)
@@ -38,6 +42,8 @@ func TestReverseOfInt(t *testing.T) {
 }
 
 func TestReverseOfStruct(t *testing.T) {
+	t.Parallel()
+
 	type Person struct {
 		Name string
 		Age  int
@@ -65,6 +71,8 @@ func TestReverseOfStruct(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			res := Reverse(tc.slice)
 			assert.ElementsMatch(t, tc.want, res)
 			assert.NotSame(t, &tc.slice, &res)
@@ -73,6 +81,8 @@ func TestReverseOfStruct(t *testing.T) {
 }
 
 func TestReverseInPlaceOfInt(t *testing.T) {
+	t.Parallel()
+
 	testCases := []struct {
 		name  string
 		slice []int
@@ -95,6 +105,8 @@ func TestReverseInPlaceOfInt(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			ReverseInPlace(tc.slice)
 			assert.ElementsMatch(t, tc.want, tc.slice)
 		})
@@ -102,6 +114,8 @@ func TestReverseInPlaceOfInt(t *testing.T) {
 }
 
 func TestReverseInPlaceOfStruct(t *testing.T) {
+	t.Parallel()
+
 	type Person struct {
 		Name string
 		Age  int
@@ -129,6 +143,8 @@ func TestReverseInPlaceOfStruct(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			ReverseInPlace(tc.slice)
 			assert.ElementsMatch(t, tc.want, tc.slice)
 		})
