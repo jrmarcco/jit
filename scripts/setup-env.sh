@@ -16,8 +16,4 @@ echo "🚀 install & update mockgen ..."
 go install github.com/golang/mock/mockgen@latest
 echo "✅ done"
 
-echo "🚀 install & update buf ..."
-go install github.com/bufbuild/buf/cmd/buf@latest
-echo "✅ done"
-
 echo "🎉 setup tools complete"
