@@ -13,7 +13,7 @@ go install golang.org/x/tools/cmd/goimports@latest
 echo "✅ done"
 
 echo "🚀 install & update mockgen ..."
-go install github.com/golang/mock/mockgen@latest
+go install go.uber.org/mock/mockgen@latest
 echo "✅ done"
 
 echo "🎉 setup tools complete"
