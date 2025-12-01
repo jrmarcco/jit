@@ -3,7 +3,7 @@ package list
 import (
 	"math/rand/v2"
 
-	"github.com/JrMarcco/jit"
+	"github.com/jrmarcco/jit"
 )
 
 const MaxLevel = 32

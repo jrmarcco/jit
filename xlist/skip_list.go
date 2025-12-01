@@ -1,8 +1,8 @@
 package xlist
 
 import (
-	"github.com/JrMarcco/jit"
-	"github.com/JrMarcco/jit/internal/list"
+	"github.com/jrmarcco/jit"
+	"github.com/jrmarcco/jit/internal/list"
 )
 
 type SkipList[T any] struct {

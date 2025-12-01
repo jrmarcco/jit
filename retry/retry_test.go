@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/JrMarcco/jit/internal/errs"
+	"github.com/jrmarcco/jit/internal/errs"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

@@ -3,8 +3,8 @@ package xmap
 import (
 	"testing"
 
-	"github.com/JrMarcco/jit"
-	"github.com/JrMarcco/jit/xslice"
+	"github.com/jrmarcco/jit"
+	"github.com/jrmarcco/jit/xslice"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

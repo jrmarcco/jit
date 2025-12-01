@@ -3,7 +3,7 @@ package xlist
 import (
 	"testing"
 
-	"github.com/JrMarcco/jit"
+	"github.com/jrmarcco/jit"
 	"github.com/stretchr/testify/assert"
 )
 

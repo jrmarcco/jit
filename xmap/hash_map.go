@@ -1,8 +1,6 @@
 package xmap
 
-import (
-	"github.com/JrMarcco/jit/xsync"
-)
+import "github.com/jrmarcco/jit/xsync"
 
 type Hashable interface {
 	Hash() uint64

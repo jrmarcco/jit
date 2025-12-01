@@ -4,7 +4,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/JrMarcco/jit/internal/errs"
+	"github.com/jrmarcco/jit/internal/errs"
 )
 
 var _ Strategy = (*FixedIntervalStrategy)(nil)

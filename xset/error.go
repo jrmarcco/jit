@@ -1,5 +1,5 @@
 package xset
 
-import "github.com/JrMarcco/jit/xmap"
+import "github.com/jrmarcco/jit/xmap"
 
 var ErrNilComparator = xmap.ErrNilComparator

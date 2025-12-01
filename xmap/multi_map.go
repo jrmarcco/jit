@@ -1,6 +1,6 @@
 package xmap
 
-import "github.com/JrMarcco/jit"
+import "github.com/jrmarcco/jit"
 
 type MultiMap[K any, V any] struct {
 	m imap[K, []V]

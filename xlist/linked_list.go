@@ -1,6 +1,6 @@
 package xlist
 
-import "github.com/JrMarcco/jit/internal/errs"
+import "github.com/jrmarcco/jit/internal/errs"
 
 var _ List[any] = (*LinkedList[any])(nil)
 

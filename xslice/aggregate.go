@@ -1,8 +1,8 @@
 package xslice
 
 import (
-	"github.com/JrMarcco/jit"
-	"github.com/JrMarcco/jit/internal/errs"
+	"github.com/jrmarcco/jit"
+	"github.com/jrmarcco/jit/internal/errs"
 )
 
 func zeroVal[T jit.RealNumber]() T {

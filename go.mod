@@ -1,4 +1,4 @@
-module github.com/JrMarcco/jit
+module github.com/jrmarcco/jit
 
 go 1.25
 

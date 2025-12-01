@@ -6,8 +6,8 @@ import (
 	"slices"
 	"time"
 
-	"github.com/JrMarcco/jit/bean/option"
-	"github.com/JrMarcco/jit/xset"
+	"github.com/jrmarcco/jit/bean/option"
+	"github.com/jrmarcco/jit/xset"
 )
 
 type RefCopier[S any, D any] struct {

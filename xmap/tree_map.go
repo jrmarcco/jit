@@ -3,10 +3,9 @@ package xmap
 import (
 	"errors"
 
-	"github.com/JrMarcco/jit"
-
-	"github.com/JrMarcco/jit/internal/errs"
-	"github.com/JrMarcco/jit/internal/tree"
+	"github.com/jrmarcco/jit"
+	"github.com/jrmarcco/jit/internal/errs"
+	"github.com/jrmarcco/jit/internal/tree"
 )
 
 var _ imap[any, any] = (*TreeMap[any, any])(nil)

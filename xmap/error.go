@@ -1,7 +1,5 @@
 package xmap
 
-import (
-	"errors"
-)
+import "errors"
 
 var ErrNilComparator = errors.New("[jit] comparator can not be nil")

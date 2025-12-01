@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/JrMarcco/jit/bean/option"
+	"github.com/jrmarcco/jit/bean/option"
 	"github.com/stretchr/testify/assert"
 )
 

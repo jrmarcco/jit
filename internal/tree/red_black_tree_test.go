@@ -3,8 +3,8 @@ package tree
 import (
 	"testing"
 
-	"github.com/JrMarcco/jit"
-	"github.com/JrMarcco/jit/internal/errs"
+	"github.com/jrmarcco/jit"
+	"github.com/jrmarcco/jit/internal/errs"
 	"github.com/stretchr/testify/assert"
 )
 

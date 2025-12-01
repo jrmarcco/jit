@@ -1,8 +1,8 @@
 package xset
 
 import (
-	"github.com/JrMarcco/jit"
-	"github.com/JrMarcco/jit/xmap"
+	"github.com/jrmarcco/jit"
+	"github.com/jrmarcco/jit/xmap"
 )
 
 var _ Set[any] = (*TreeSet[any])(nil)

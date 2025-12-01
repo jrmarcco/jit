@@ -3,8 +3,8 @@ package xjwt
 import (
 	"time"
 
-	"github.com/JrMarcco/jit/bean/option"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/jrmarcco/jit/bean/option"
 )
 
 const defaultExpiration = time.Hour

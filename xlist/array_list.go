@@ -1,8 +1,8 @@
 package xlist
 
 import (
-	"github.com/JrMarcco/jit/internal/errs"
-	"github.com/JrMarcco/jit/internal/slice"
+	"github.com/jrmarcco/jit/internal/errs"
+	"github.com/jrmarcco/jit/internal/slice"
 )
 
 var _ List[any] = (*ArrayList[any])(nil)

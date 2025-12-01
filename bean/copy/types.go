@@ -1,9 +1,9 @@
 package copier
 
 import (
-	"github.com/JrMarcco/jit/bean/copy/converter"
-	"github.com/JrMarcco/jit/bean/option"
-	"github.com/JrMarcco/jit/xset"
+	"github.com/jrmarcco/jit/bean/copy/converter"
+	"github.com/jrmarcco/jit/bean/option"
+	"github.com/jrmarcco/jit/xset"
 )
 
 // Copier is a type that can copy a source object to a destination object.

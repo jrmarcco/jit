@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/JrMarcco/jit/internal/errs"
+	"github.com/jrmarcco/jit/internal/errs"
 )
 
 func Retry(ctx context.Context, strategy Strategy, bizFunc func() error) error {

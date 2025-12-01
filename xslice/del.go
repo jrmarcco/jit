@@ -1,6 +1,6 @@
 package xslice
 
-import "github.com/JrMarcco/jit/internal/slice"
+import "github.com/jrmarcco/jit/internal/slice"
 
 // Del removes an element at the specified index from the slice.
 func Del[T any](src []T, index int) ([]T, error) {
