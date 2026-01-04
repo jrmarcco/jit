@@ -19,9 +19,24 @@ type Ed25519ManagerBuilder[T any] struct {
 	decryptKey string
 }
 
-func (b *Ed25519ManagerBuilder[T]) ClaimsConfig(config ClaimsConfig) *Ed25519ManagerBuilder[T] {
-	b.config = config
-	return b
+// NewEd25519ManagerBuilder 创建 ed25519 管理器。
+func NewEd25519ManagerBuilder[T any](encryptKey, decryptKey string) *Ed25519ManagerBuilder[T] {
+	const expiration = 24 * time.Hour
+	return &Ed25519ManagerBuilder[T]{
+		config:     NewClaimsConfig(WithExpiration(expiration)), // 默认 24 小时过期
+		encryptKey: encryptKey,
+		decryptKey: decryptKey,
+	}
+}
+
+// NewEd25519VerifierBuilder 用于创建只包含 public key 的 ed25519 管理器。
+// 用于只需要验证 jwt 而不需要签发 jwt 的场景。
+func NewEd25519VerifierBuilder[T any](decryptKey string) *Ed25519ManagerBuilder[T] {
+	const expiration = 24 * time.Hour
+	return &Ed25519ManagerBuilder[T]{
+		config:     NewClaimsConfig(WithExpiration(expiration)),
+		decryptKey: decryptKey,
+	}
 }
 
 func (b *Ed25519ManagerBuilder[T]) Build() (*Ed25519Manager[T], error) {
@@ -48,24 +63,9 @@ func (b *Ed25519ManagerBuilder[T]) Build() (*Ed25519Manager[T], error) {
 	}, nil
 }
 
-// NewEd25519ManagerBuilder 创建 ed25519 管理器。
-func NewEd25519ManagerBuilder[T any](encryptKey, decryptKey string) *Ed25519ManagerBuilder[T] {
-	const expiration = 24 * time.Hour
-	return &Ed25519ManagerBuilder[T]{
-		config:     NewClaimsConfig(WithExpiration(expiration)), // 默认 24 小时过期
-		encryptKey: encryptKey,
-		decryptKey: decryptKey,
-	}
-}
-
-// NewEd25519VerifierBuilder 用于创建只包含 public key 的 ed25519 管理器。
-// 用于只需要验证 jwt 而不需要签发 jwt 的场景。
-func NewEd25519VerifierBuilder[T any](decryptKey string) *Ed25519ManagerBuilder[T] {
-	const expiration = 24 * time.Hour
-	return &Ed25519ManagerBuilder[T]{
-		config:     NewClaimsConfig(WithExpiration(expiration)),
-		decryptKey: decryptKey,
-	}
+func (b *Ed25519ManagerBuilder[T]) ClaimsConfig(config ClaimsConfig) *Ed25519ManagerBuilder[T] {
+	b.config = config
+	return b
 }
 
 // loadPrivateKey 加载私钥。

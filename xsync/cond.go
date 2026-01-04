@@ -17,6 +17,12 @@ type Cond struct {
 	noCopy noCopy
 }
 
+func NewCond(locker sync.Locker) *Cond {
+	return &Cond{
+		L: locker,
+	}
+}
+
 // Wait like Go standard library's sync.Cond.Wait.
 // have to lock the lock before calling Wait.
 //
@@ -80,12 +86,6 @@ func (c *Cond) Broadcast() {
 	c.initNotifyListOnce()
 
 	c.notifyList.notifyAll()
-}
-
-func NewCond(locker sync.Locker) *Cond {
-	return &Cond{
-		L: locker,
-	}
 }
 
 type notifyList struct {

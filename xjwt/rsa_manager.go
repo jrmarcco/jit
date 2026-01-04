@@ -17,9 +17,21 @@ type RSAManagerBuilder[T any] struct {
 	decryptKey string
 }
 
-func (b *RSAManagerBuilder[T]) ClaimsConfig(config ClaimsConfig) *RSAManagerBuilder[T] {
-	b.config = config
-	return b
+func NewRSAManagerBuilder[T any](encryptKey, decryptKey string) *RSAManagerBuilder[T] {
+	const expiration = 24 * time.Hour
+	return &RSAManagerBuilder[T]{
+		config:     NewClaimsConfig(WithExpiration(expiration)), // 默认 24 小时过期
+		encryptKey: encryptKey,
+		decryptKey: decryptKey,
+	}
+}
+
+func NewRSAVerifierBuilder[T any](decryptKey string) *RSAManagerBuilder[T] {
+	const expiration = 24 * time.Hour
+	return &RSAManagerBuilder[T]{
+		config:     NewClaimsConfig(WithExpiration(expiration)),
+		decryptKey: decryptKey,
+	}
 }
 
 func (b *RSAManagerBuilder[T]) Build() (*RSAManager[T], error) {
@@ -46,21 +58,9 @@ func (b *RSAManagerBuilder[T]) Build() (*RSAManager[T], error) {
 	}, nil
 }
 
-func NewRSAManagerBuilder[T any](encryptKey, decryptKey string) *RSAManagerBuilder[T] {
-	const expiration = 24 * time.Hour
-	return &RSAManagerBuilder[T]{
-		config:     NewClaimsConfig(WithExpiration(expiration)), // 默认 24 小时过期
-		encryptKey: encryptKey,
-		decryptKey: decryptKey,
-	}
-}
-
-func NewRSAVerifierBuilder[T any](decryptKey string) *RSAManagerBuilder[T] {
-	const expiration = 24 * time.Hour
-	return &RSAManagerBuilder[T]{
-		config:     NewClaimsConfig(WithExpiration(expiration)),
-		decryptKey: decryptKey,
-	}
+func (b *RSAManagerBuilder[T]) ClaimsConfig(config ClaimsConfig) *RSAManagerBuilder[T] {
+	b.config = config
+	return b
 }
 
 var _ Manager[any] = (*RSAManager[any])(nil)

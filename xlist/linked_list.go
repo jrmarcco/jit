@@ -7,7 +7,29 @@ var _ List[any] = (*LinkedList[any])(nil)
 type LinkedList[T any] struct {
 	head *linkedListNode[T]
 	tail *linkedListNode[T]
+
 	size int
+}
+
+func NewLinkedList[T any]() *LinkedList[T] {
+	head := &linkedListNode[T]{}
+	tail := &linkedListNode[T]{
+		prev: head,
+		next: head,
+	}
+	head.next = tail
+	head.prev = tail
+
+	return &LinkedList[T]{
+		head: head,
+		tail: tail,
+	}
+}
+
+func LinkedListOf[T any](vals []T) *LinkedList[T] {
+	ll := NewLinkedList[T]()
+	_ = ll.Append(vals...)
+	return ll
 }
 
 func (ll *LinkedList[T]) Insert(index int, val T) error {
@@ -119,27 +141,6 @@ func (ll *LinkedList[T]) Cap() int {
 
 func (ll *LinkedList[T]) Len() int {
 	return ll.size
-}
-
-func NewLinkedList[T any]() *LinkedList[T] {
-	head := &linkedListNode[T]{}
-	tail := &linkedListNode[T]{
-		prev: head,
-		next: head,
-	}
-	head.next = tail
-	head.prev = tail
-
-	return &LinkedList[T]{
-		head: head,
-		tail: tail,
-	}
-}
-
-func LinkedListOf[T any](vals []T) *LinkedList[T] {
-	ll := NewLinkedList[T]()
-	_ = ll.Append(vals...)
-	return ll
 }
 
 type linkedListNode[T any] struct {

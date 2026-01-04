@@ -9,6 +9,12 @@ type SkipList[T any] struct {
 	skipList *list.SkipList[T]
 }
 
+func NewSkipList[T any](cmp jit.Comparator[T]) *SkipList[T] {
+	return &SkipList[T]{
+		skipList: list.NewSkipList(cmp),
+	}
+}
+
 func (sl *SkipList[T]) Insert(val T) {
 	sl.skipList.Insert(val)
 }
@@ -35,10 +41,4 @@ func (sl *SkipList[T]) Len() int {
 
 func (sl *SkipList[T]) ToSlice() []T {
 	return sl.skipList.ToSlice()
-}
-
-func NewSkipList[T any](cmp jit.Comparator[T]) *SkipList[T] {
-	return &SkipList[T]{
-		skipList: list.NewSkipList(cmp),
-	}
 }

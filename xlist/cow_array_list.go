@@ -17,6 +17,21 @@ type CowArrayList[T any] struct {
 	vals []T
 }
 
+func NewCowArrayList[T any](size int) *CowArrayList[T] {
+	return &CowArrayList[T]{
+		vals: make([]T, 0, size),
+	}
+}
+
+func CowArrayListOf[T any](slice []T) *CowArrayList[T] {
+	vals := make([]T, len(slice))
+	copy(vals, slice)
+
+	return &CowArrayList[T]{
+		vals: vals,
+	}
+}
+
 func (cal *CowArrayList[T]) Insert(index int, val T) error {
 	cal.mu.Lock()
 	defer cal.mu.Unlock()
@@ -117,19 +132,4 @@ func (cal *CowArrayList[T]) Cap() int {
 
 func (cal *CowArrayList[T]) Len() int {
 	return len(cal.vals)
-}
-
-func NewCowArrayList[T any](size int) *CowArrayList[T] {
-	return &CowArrayList[T]{
-		vals: make([]T, 0, size),
-	}
-}
-
-func CowArrayListOf[T any](slice []T) *CowArrayList[T] {
-	vals := make([]T, len(slice))
-	copy(vals, slice)
-
-	return &CowArrayList[T]{
-		vals: vals,
-	}
 }

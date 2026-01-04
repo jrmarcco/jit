@@ -28,6 +28,14 @@ type RBTree[K any, V any] struct {
 	cmp  jit.Comparator[K]
 }
 
+func NewRBTree[K any, V any](cmp jit.Comparator[K]) *RBTree[K, V] {
+	return &RBTree[K, V]{
+		root: nil,
+		size: 0,
+		cmp:  cmp,
+	}
+}
+
 func (rbt *RBTree[K, V]) Size() int64 {
 	return rbt.size
 }
@@ -654,14 +662,6 @@ func (rbt *RBTree[K, V]) midOrderTraversal(visitFn func(node *rbNode[K, V])) {
 	}
 }
 
-func NewRBTree[K any, V any](cmp jit.Comparator[K]) *RBTree[K, V] {
-	return &RBTree[K, V]{
-		root: nil,
-		size: 0,
-		cmp:  cmp,
-	}
-}
-
 // rbNode is a node of a red-black tree
 // consider memory alignment, put color at the end of the struct
 type rbNode[K any, V any] struct {
@@ -671,6 +671,19 @@ type rbNode[K any, V any] struct {
 	key    K
 	val    V
 	color  color
+}
+
+// newRbNode create a new node
+// the new node is red before insert fixup
+func newRbNode[K any, V any](key K, val V) *rbNode[K, V] {
+	return &rbNode[K, V]{
+		key:    key,
+		val:    val,
+		color:  red,
+		parent: nil,
+		left:   nil,
+		right:  nil,
+	}
 }
 
 func (rbn *rbNode[K, V]) getColor() color {
@@ -713,17 +726,4 @@ func (rbn *rbNode[K, V]) getUncle() *rbNode[K, V] {
 	}
 
 	return rbn.parent.getSibling()
-}
-
-// newRbNode create a new node
-// the new node is red before insert fixup
-func newRbNode[K any, V any](key K, val V) *rbNode[K, V] {
-	return &rbNode[K, V]{
-		key:    key,
-		val:    val,
-		color:  red,
-		parent: nil,
-		left:   nil,
-		right:  nil,
-	}
 }

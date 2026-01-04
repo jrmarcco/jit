@@ -17,6 +17,42 @@ type RefCopier[S any, D any] struct {
 	defaultConf copyConf
 }
 
+func NewRefCopier[S any, D any](opts ...option.Opt[copyConf]) (*RefCopier[S, D], error) {
+	srcTyp := reflect.TypeOf(new(S)).Elem()
+	dstTyp := reflect.TypeOf(new(D)).Elem()
+
+	if srcTyp.Kind() != reflect.Struct {
+		return nil, errInvalidType("struct", srcTyp)
+	}
+
+	if dstTyp.Kind() != reflect.Struct {
+		return nil, errInvalidType("struct", dstTyp)
+	}
+
+	root := fieldNode{
+		fields: []fieldNode{},
+	}
+
+	copier := &RefCopier[S, D]{
+		root: root,
+		atomicTypes: []reflect.Type{
+			reflect.TypeOf(time.Time{}),
+		},
+	}
+
+	if err := copier.createFieldNode(srcTyp, dstTyp, &root); err != nil {
+		return nil, err
+	}
+
+	copier.root = root
+
+	cc := newCopyConf()
+	option.Apply(&cc, opts...)
+
+	copier.defaultConf = cc
+	return copier, nil
+}
+
 func (rc *RefCopier[S, D]) createFieldNode(srcTyp, dstTyp reflect.Type, root *fieldNode) error {
 	srcMap := map[string]int{}
 	for i := range srcTyp.NumField() {
@@ -237,42 +273,6 @@ func (rc *RefCopier[S, D]) copyStructNode(srcTyp reflect.Type, srcVal reflect.Va
 		}
 	}
 	return nil
-}
-
-func NewRefCopier[S any, D any](opts ...option.Opt[copyConf]) (*RefCopier[S, D], error) {
-	srcTyp := reflect.TypeOf(new(S)).Elem()
-	dstTyp := reflect.TypeOf(new(D)).Elem()
-
-	if srcTyp.Kind() != reflect.Struct {
-		return nil, errInvalidType("struct", srcTyp)
-	}
-
-	if dstTyp.Kind() != reflect.Struct {
-		return nil, errInvalidType("struct", dstTyp)
-	}
-
-	root := fieldNode{
-		fields: []fieldNode{},
-	}
-
-	copier := &RefCopier[S, D]{
-		root: root,
-		atomicTypes: []reflect.Type{
-			reflect.TypeOf(time.Time{}),
-		},
-	}
-
-	if err := copier.createFieldNode(srcTyp, dstTyp, &root); err != nil {
-		return nil, err
-	}
-
-	copier.root = root
-
-	cc := newCopyConf()
-	option.Apply(&cc, opts...)
-
-	copier.defaultConf = cc
-	return copier, nil
 }
 
 type fieldNode struct {

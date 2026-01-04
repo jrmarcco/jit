@@ -15,6 +15,26 @@ type SkipList[T any] struct {
 	size      int
 }
 
+func NewSkipList[T any](cmp jit.Comparator[T]) *SkipList[T] {
+	return &SkipList[T]{
+		cmp: cmp,
+		head: &skipListNode[T]{
+			next: make([]*skipListNode[T], MaxLevel),
+			span: make([]int, MaxLevel),
+		},
+		currLevel: 1,
+		size:      0,
+	}
+}
+
+func SkipListOf[T any](cmp jit.Comparator[T], slice []T) *SkipList[T] {
+	sl := NewSkipList(cmp)
+	for _, v := range slice {
+		sl.Insert(v)
+	}
+	return sl
+}
+
 // Insert inserts a value into the skip list.
 func (sl *SkipList[T]) Insert(val T) {
 	update := make([]*skipListNode[T], MaxLevel)
@@ -186,26 +206,6 @@ func (sl *SkipList[T]) ToSlice() []T {
 
 func (sl *SkipList[T]) Len() int {
 	return sl.size
-}
-
-func NewSkipList[T any](cmp jit.Comparator[T]) *SkipList[T] {
-	return &SkipList[T]{
-		cmp: cmp,
-		head: &skipListNode[T]{
-			next: make([]*skipListNode[T], MaxLevel),
-			span: make([]int, MaxLevel),
-		},
-		currLevel: 1,
-		size:      0,
-	}
-}
-
-func SkipListOf[T any](cmp jit.Comparator[T], slice []T) *SkipList[T] {
-	sl := NewSkipList(cmp)
-	for _, v := range slice {
-		sl.Insert(v)
-	}
-	return sl
 }
 
 type skipListNode[T any] struct {

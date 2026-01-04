@@ -15,6 +15,17 @@ type FixedIntervalStrategy struct {
 	retriedTimes int32
 }
 
+func NewFixedIntervalStrategy(interval time.Duration, maxTimes int32) (*FixedIntervalStrategy, error) {
+	if interval <= 0 {
+		return nil, errs.ErrInvalidInterval(interval)
+	}
+	return &FixedIntervalStrategy{
+		interval:     interval,
+		maxTimes:     maxTimes,
+		retriedTimes: 0,
+	}, nil
+}
+
 func (f *FixedIntervalStrategy) Next() (time.Duration, bool) {
 	retriedTimes := atomic.AddInt32(&f.retriedTimes, 1)
 	return f.nextRetry(retriedTimes)
@@ -33,15 +44,4 @@ func (f *FixedIntervalStrategy) nextRetry(retriedTimes int32) (time.Duration, bo
 
 func (f *FixedIntervalStrategy) Report(_ error) Strategy {
 	return f
-}
-
-func NewFixedIntervalStrategy(interval time.Duration, maxTimes int32) (*FixedIntervalStrategy, error) {
-	if interval <= 0 {
-		return nil, errs.ErrInvalidInterval(interval)
-	}
-	return &FixedIntervalStrategy{
-		interval:     interval,
-		maxTimes:     maxTimes,
-		retriedTimes: 0,
-	}, nil
 }

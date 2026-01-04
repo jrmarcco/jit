@@ -29,6 +29,13 @@ type HashMap[K Hashable, V any] struct {
 	pool *xsync.Pool[*node[K, V]]
 }
 
+func NewHashMap[K Hashable, V any](size int) *HashMap[K, V] {
+	return &HashMap[K, V]{
+		m:    make(map[uint64]*node[K, V], size),
+		pool: xsync.NewPool(func() *node[K, V] { return &node[K, V]{} }),
+	}
+}
+
 func (h *HashMap[K, V]) newNode(key K, val V) *node[K, V] {
 	n := h.pool.Get()
 	n.val = val
@@ -152,12 +159,5 @@ func (h *HashMap[K, V]) Iter(visitFunc func(key K, val V) bool) {
 				return
 			}
 		}
-	}
-}
-
-func NewHashMap[K Hashable, V any](size int) *HashMap[K, V] {
-	return &HashMap[K, V]{
-		m:    make(map[uint64]*node[K, V], size),
-		pool: xsync.NewPool[*node[K, V]](func() *node[K, V] { return &node[K, V]{} }),
 	}
 }

@@ -20,6 +20,22 @@ type ExponentialBackoffStrategy struct {
 	retriedTimes int32
 }
 
+func NewExponentialBackoffStrategy(initialInterval, maxInterval time.Duration, maxRetryTime int32) (*ExponentialBackoffStrategy, error) {
+	if initialInterval <= 0 {
+		return nil, errs.ErrInvalidInterval(initialInterval)
+	}
+
+	if initialInterval > maxInterval {
+		return nil, errs.ErrInvalidMaxInterval(initialInterval)
+	}
+
+	return &ExponentialBackoffStrategy{
+		initInterval: initialInterval,
+		maxInterval:  maxInterval,
+		maxTimes:     maxRetryTime,
+	}, nil
+}
+
 func (e *ExponentialBackoffStrategy) Next() (time.Duration, bool) {
 	retriedTimes := atomic.AddInt32(&e.retriedTimes, 1)
 	return e.nextRetry(retriedTimes)
@@ -52,20 +68,4 @@ func (e *ExponentialBackoffStrategy) nextRetry(retriedTimes int32) (time.Duratio
 
 func (e *ExponentialBackoffStrategy) Report(_ error) Strategy {
 	return e
-}
-
-func NewExponentialBackoffStrategy(initialInterval, maxInterval time.Duration, maxRetryTime int32) (*ExponentialBackoffStrategy, error) {
-	if initialInterval <= 0 {
-		return nil, errs.ErrInvalidInterval(initialInterval)
-	}
-
-	if initialInterval > maxInterval {
-		return nil, errs.ErrInvalidMaxInterval(initialInterval)
-	}
-
-	return &ExponentialBackoffStrategy{
-		initInterval: initialInterval,
-		maxInterval:  maxInterval,
-		maxTimes:     maxRetryTime,
-	}, nil
 }

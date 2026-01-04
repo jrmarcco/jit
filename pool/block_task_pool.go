@@ -151,6 +151,102 @@ type BlockTaskPool struct {
 	errHandleTimeout time.Duration
 }
 
+func WithMaxIdleTime(maxIdleTime time.Duration) option.Opt[BlockTaskPool] {
+	return func(p *BlockTaskPool) {
+		p.maxIdleTime = maxIdleTime
+	}
+}
+
+func WithSubmitTimeout(submitTimeout time.Duration) option.Opt[BlockTaskPool] {
+	return func(p *BlockTaskPool) {
+		p.submitTimeout = submitTimeout
+	}
+}
+
+func WithCoreG(coreG int32) option.Opt[BlockTaskPool] {
+	return func(p *BlockTaskPool) {
+		p.coreG = coreG
+	}
+}
+
+func WithMaxG(maxG int32) option.Opt[BlockTaskPool] {
+	return func(p *BlockTaskPool) {
+		p.maxG = maxG
+	}
+}
+
+func WithQueueBacklogRate(queueBacklogRate float64) option.Opt[BlockTaskPool] {
+	return func(p *BlockTaskPool) {
+		p.queueBacklogRate = queueBacklogRate
+	}
+}
+
+func WithErrorHandler(errHandler func(ctx context.Context, err error)) option.Opt[BlockTaskPool] {
+	return func(p *BlockTaskPool) {
+		p.errHandler = errHandler
+	}
+}
+
+func WithErrHandleTimeout(errHandleTimeout time.Duration) option.Opt[BlockTaskPool] {
+	return func(p *BlockTaskPool) {
+		p.errHandleTimeout = errHandleTimeout
+	}
+}
+
+// NewBlockTaskPool 创建任务池。
+func NewBlockTaskPool(initG, queueSize int32, opts ...option.Opt[BlockTaskPool]) (*BlockTaskPool, error) {
+	if initG <= 0 {
+		return nil, fmt.Errorf("%w: init goroutine should be greater than 0", errInvalidParam)
+	}
+	if queueSize < 0 {
+		return nil, fmt.Errorf("%w: queue size should be greater or equal to 0", errInvalidParam)
+	}
+
+	p := &BlockTaskPool{
+		queue:            make(chan Task, queueSize),
+		initG:            initG,
+		coreG:            initG,
+		maxG:             initG,
+		maxIdleTime:      defaultMaxIdleTime,
+		submitTimeout:    defaultSubmitTimeout,
+		errHandleTimeout: defaultErrHandleTimeout,
+	}
+
+	ctx := context.Background()
+	p.interruptCtx, p.interruptCancelFunc = context.WithCancel(ctx)
+	atomic.StoreInt32(&p.state, stateCreated)
+
+	option.Apply(p, opts...)
+
+	// 默认情况 coreG == maxG。
+	// 当 coreG == maxG 时，goroutine 的分层会简化为两层:
+	//
+	//		[1	 , initG]: 永久 goroutine
+	//		(initG, maxG]: 带超时机制的核心 goroutine
+	//
+	// 这样使 goroutine 的数量更平滑（只有 initG -> maxG 的渐进式增长），资源更可预测。
+	// 所有核心 goroutine 都有相同的生命周期管理。
+	if p.coreG != p.initG && p.maxG == p.initG {
+		// 只使用 option WithCoreG 的情况，保证 maxG 至少等于 coreG。
+		p.maxG = p.coreG
+	} else if p.coreG == p.initG && p.maxG != p.initG {
+		// 只使用 option WithMaxG 的情况
+		p.coreG = p.maxG
+	}
+
+	if !(p.initG <= p.coreG && p.coreG <= p.maxG) {
+		return nil, fmt.Errorf("%w: goroutine required to satisfy [ init <= core <= max ]", errInvalidParam)
+	}
+
+	p.timeoutG = &timeoutGoroutine{
+		idMap: make(map[int32]struct{}),
+	}
+	if p.queueBacklogRate < float64(0) || p.queueBacklogRate > float64(1) {
+		return nil, fmt.Errorf("%w: queue backlog rate should be in [0, 1]", errInvalidParam)
+	}
+	return p, nil
+}
+
 // Submit 提交一个任务。
 // 在队列已满的情况下，调用者会被阻塞。
 // 在 Start 方法被调用后仍然可以调用 Submit 方法。
@@ -531,100 +627,4 @@ func (p *BlockTaskPool) getState(timestamp int64) State {
 		PoolState:    atomic.LoadInt32(&p.state),
 		Timestamp:    timestamp,
 	}
-}
-
-func WithMaxIdleTime(maxIdleTime time.Duration) option.Opt[BlockTaskPool] {
-	return func(p *BlockTaskPool) {
-		p.maxIdleTime = maxIdleTime
-	}
-}
-
-func WithSubmitTimeout(submitTimeout time.Duration) option.Opt[BlockTaskPool] {
-	return func(p *BlockTaskPool) {
-		p.submitTimeout = submitTimeout
-	}
-}
-
-func WithCoreG(coreG int32) option.Opt[BlockTaskPool] {
-	return func(p *BlockTaskPool) {
-		p.coreG = coreG
-	}
-}
-
-func WithMaxG(maxG int32) option.Opt[BlockTaskPool] {
-	return func(p *BlockTaskPool) {
-		p.maxG = maxG
-	}
-}
-
-func WithQueueBacklogRate(queueBacklogRate float64) option.Opt[BlockTaskPool] {
-	return func(p *BlockTaskPool) {
-		p.queueBacklogRate = queueBacklogRate
-	}
-}
-
-func WithErrorHandler(errHandler func(ctx context.Context, err error)) option.Opt[BlockTaskPool] {
-	return func(p *BlockTaskPool) {
-		p.errHandler = errHandler
-	}
-}
-
-func WithErrHandleTimeout(errHandleTimeout time.Duration) option.Opt[BlockTaskPool] {
-	return func(p *BlockTaskPool) {
-		p.errHandleTimeout = errHandleTimeout
-	}
-}
-
-// NewBlockTaskPool 创建任务池。
-func NewBlockTaskPool(initG, queueSize int32, opts ...option.Opt[BlockTaskPool]) (*BlockTaskPool, error) {
-	if initG <= 0 {
-		return nil, fmt.Errorf("%w: init goroutine should be greater than 0", errInvalidParam)
-	}
-	if queueSize < 0 {
-		return nil, fmt.Errorf("%w: queue size should be greater or equal to 0", errInvalidParam)
-	}
-
-	p := &BlockTaskPool{
-		queue:            make(chan Task, queueSize),
-		initG:            initG,
-		coreG:            initG,
-		maxG:             initG,
-		maxIdleTime:      defaultMaxIdleTime,
-		submitTimeout:    defaultSubmitTimeout,
-		errHandleTimeout: defaultErrHandleTimeout,
-	}
-
-	ctx := context.Background()
-	p.interruptCtx, p.interruptCancelFunc = context.WithCancel(ctx)
-	atomic.StoreInt32(&p.state, stateCreated)
-
-	option.Apply(p, opts...)
-
-	// 默认情况 coreG == maxG。
-	// 当 coreG == maxG 时，goroutine 的分层会简化为两层:
-	//
-	//		[1	 , initG]: 永久 goroutine
-	//		(initG, maxG]: 带超时机制的核心 goroutine
-	//
-	// 这样使 goroutine 的数量更平滑（只有 initG -> maxG 的渐进式增长），资源更可预测。
-	// 所有核心 goroutine 都有相同的生命周期管理。
-	if p.coreG != p.initG && p.maxG == p.initG {
-		// 只使用 option WithCoreG 的情况，保证 maxG 至少等于 coreG。
-		p.maxG = p.coreG
-	} else if p.coreG == p.initG && p.maxG != p.initG {
-		// 只使用 option WithMaxG 的情况
-		p.coreG = p.maxG
-	}
-
-	if !(p.initG <= p.coreG && p.coreG <= p.maxG) {
-		return nil, fmt.Errorf("%w: goroutine required to satisfy [ init <= core <= max ]", errInvalidParam)
-	}
-
-	p.timeoutG = &timeoutGoroutine{
-		idMap: make(map[int32]struct{}),
-	}
-	if p.queueBacklogRate < float64(0) || p.queueBacklogRate > float64(1) {
-		return nil, fmt.Errorf("%w: queue backlog rate should be in [0, 1]", errInvalidParam)
-	}
-	return p, nil
 }

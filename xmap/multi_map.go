@@ -6,6 +6,23 @@ type MultiMap[K any, V any] struct {
 	m imap[K, []V]
 }
 
+func NewMultiTreeMap[K comparable, V any](cmp jit.Comparator[K]) (*MultiMap[K, V], error) {
+	treeMap, err := NewTreeMap[K, []V](cmp)
+	if err != nil {
+		return nil, err
+	}
+	return &MultiMap[K, V]{
+		m: treeMap,
+	}, nil
+}
+
+func NewMultiHashMap[K Hashable, V any](size int) (*MultiMap[K, V], error) {
+	var m imap[K, []V] = NewHashMap[K, []V](size)
+	return &MultiMap[K, V]{
+		m: m,
+	}, nil
+}
+
 func (m *MultiMap[K, V]) Size() int64 {
 	return m.m.Size()
 }
@@ -57,21 +74,4 @@ func (m *MultiMap[K, V]) Iter(visitFunc func(key K, val V) bool) {
 		}
 		return true
 	})
-}
-
-func NewMultiTreeMap[K comparable, V any](cmp jit.Comparator[K]) (*MultiMap[K, V], error) {
-	treeMap, err := NewTreeMap[K, []V](cmp)
-	if err != nil {
-		return nil, err
-	}
-	return &MultiMap[K, V]{
-		m: treeMap,
-	}, nil
-}
-
-func NewMultiHashMap[K Hashable, V any](size int) (*MultiMap[K, V], error) {
-	var m imap[K, []V] = NewHashMap[K, []V](size)
-	return &MultiMap[K, V]{
-		m: m,
-	}, nil
 }

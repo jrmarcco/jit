@@ -18,6 +18,17 @@ type AdaptiveTimeoutStrategy struct {
 	totalBit uint64
 }
 
+func NewAdaptiveTimeoutStrategy(strategy Strategy, bufferSize, threshold int) *AdaptiveTimeoutStrategy {
+	const defaultTotalBit = 64
+	return &AdaptiveTimeoutStrategy{
+		strategy:   strategy,
+		threshold:  threshold,
+		bufferSize: bufferSize,
+		ringBuffer: make([]uint64, bufferSize),
+		totalBit:   uint64(defaultTotalBit) & uint64(bufferSize),
+	}
+}
+
 func (a *AdaptiveTimeoutStrategy) Next() (time.Duration, bool) {
 	failureCnt := a.getFailureCnt()
 	if failureCnt >= a.threshold {
@@ -56,15 +67,4 @@ func (a *AdaptiveTimeoutStrategy) getFailureCnt() int {
 	}
 
 	return cnt
-}
-
-func NewAdaptiveTimeoutStrategy(strategy Strategy, bufferSize, threshold int) *AdaptiveTimeoutStrategy {
-	const defaultTotalBit = 64
-	return &AdaptiveTimeoutStrategy{
-		strategy:   strategy,
-		threshold:  threshold,
-		bufferSize: bufferSize,
-		ringBuffer: make([]uint64, bufferSize),
-		totalBit:   uint64(defaultTotalBit) & uint64(bufferSize),
-	}
 }

@@ -6,6 +6,10 @@ type builtInMap[K comparable, V any] struct {
 	data map[K]V
 }
 
+func newBuiltInMap[K comparable, V any](data map[K]V) *builtInMap[K, V] {
+	return &builtInMap[K, V]{data: data}
+}
+
 func (m *builtInMap[K, V]) Size() int64 {
 	return int64(len(m.data))
 }
@@ -40,8 +44,4 @@ func (m *builtInMap[K, V]) Iter(visitFunc func(key K, val V) bool) {
 			break
 		}
 	}
-}
-
-func newBuiltInMap[K comparable, V any](data map[K]V) *builtInMap[K, V] {
-	return &builtInMap[K, V]{data: data}
 }

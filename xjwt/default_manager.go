@@ -17,25 +17,6 @@ type DefaultManagerBuilder[T any] struct {
 	decryptKey    string
 }
 
-func (b *DefaultManagerBuilder[T]) Build() *DefaultManager[T] {
-	return &DefaultManager[T]{
-		config:        b.config,
-		signingMethod: b.signingMethod,
-		encryptKey:    b.encryptKey,
-		decryptKey:    b.decryptKey,
-	}
-}
-
-func (b *DefaultManagerBuilder[T]) ClaimsConfig(config ClaimsConfig) *DefaultManagerBuilder[T] {
-	b.config = config
-	return b
-}
-
-func (b *DefaultManagerBuilder[T]) SigningMethod(signingMethod jwt.SigningMethod) *DefaultManagerBuilder[T] {
-	b.signingMethod = signingMethod
-	return b
-}
-
 func NewDefaultManagerBuilder[T any](encryptKey, decryptKey string) *DefaultManagerBuilder[T] {
 	const expiration = 24 * time.Hour
 	return &DefaultManagerBuilder[T]{
@@ -53,6 +34,25 @@ func NewDefaultVerifierBuilder[T any](decryptKey string) *DefaultManagerBuilder[
 		config:     NewClaimsConfig(WithExpiration(expiration)),
 		decryptKey: decryptKey,
 	}
+}
+
+func (b *DefaultManagerBuilder[T]) Build() *DefaultManager[T] {
+	return &DefaultManager[T]{
+		config:        b.config,
+		signingMethod: b.signingMethod,
+		encryptKey:    b.encryptKey,
+		decryptKey:    b.decryptKey,
+	}
+}
+
+func (b *DefaultManagerBuilder[T]) ClaimsConfig(config ClaimsConfig) *DefaultManagerBuilder[T] {
+	b.config = config
+	return b
+}
+
+func (b *DefaultManagerBuilder[T]) SigningMethod(signingMethod jwt.SigningMethod) *DefaultManagerBuilder[T] {
+	b.signingMethod = signingMethod
+	return b
 }
 
 var _ Manager[any] = (*DefaultManager[any])(nil)
