@@ -1,7 +1,7 @@
 package copier
 
 import (
-	"github.com/jrmarcco/jit/bean/copy/converter"
+	"github.com/jrmarcco/jit/bean/copy/convert"
 	"github.com/jrmarcco/jit/bean/option"
 	"github.com/jrmarcco/jit/xset"
 )
@@ -12,11 +12,11 @@ type Copier[S any, D any] interface {
 	CopyTo(src *S, dst *D) error
 }
 
-type convertFunc func(src any) (any, error)
+type convertor func(src any) (any, error)
 
 type copyConf struct {
 	ignoreFds *xset.MapSet[string]
-	covertFds map[string]convertFunc
+	covertFds map[string]convertor
 }
 
 func newCopyConf() copyConf {
@@ -46,7 +46,7 @@ func IgnoreFds(fds ...string) option.Opt[copyConf] {
 	}
 }
 
-func ConvertFd[S any, D any](fd string, converter converter.Converter[S, D]) option.Opt[copyConf] {
+func ConvertFd[S any, D any](fd string, converter convert.Convertor[S, D]) option.Opt[copyConf] {
 	return func(cc *copyConf) {
 		if fd == "" || converter == nil {
 			return
@@ -54,7 +54,7 @@ func ConvertFd[S any, D any](fd string, converter converter.Converter[S, D]) opt
 
 		if cc.covertFds == nil {
 			const defaultSize = 8
-			cc.covertFds = make(map[string]convertFunc, defaultSize)
+			cc.covertFds = make(map[string]convertor, defaultSize)
 		}
 
 		cc.covertFds[fd] = func(src any) (any, error) {

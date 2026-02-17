@@ -23,12 +23,12 @@ func NewCowArrayList[T any](size int) *CowArrayList[T] {
 	}
 }
 
-func CowArrayListOf[T any](slice []T) *CowArrayList[T] {
-	vals := make([]T, len(slice))
-	copy(vals, slice)
+func CowArrayListOf[T any](vals []T) *CowArrayList[T] {
+	res := make([]T, len(vals))
+	copy(res, vals)
 
 	return &CowArrayList[T]{
-		vals: vals,
+		vals: res,
 	}
 }
 

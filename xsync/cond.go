@@ -52,12 +52,15 @@ func (c *Cond) Wait(ctx context.Context) error {
 // checkCopy checks whether the Cond is copied.
 func (c *Cond) checkCopy() {
 	// check the checker pointer is to the current address.
+	//nolint:gosec // G103: intentional use of unsafe for copy detection.
 	if c.checker != unsafe.Pointer(c) &&
 		// ensure the checker pointer is not changed ( checker pointer first assigned ).
 		// the checker pointer is nil when first created.
+		//nolint:gosec // G103: intentional use of unsafe for copy detection.
 		!atomic.CompareAndSwapPointer(&c.checker, nil, unsafe.Pointer(c)) &&
 		// check the checker pointer again.
 		// the checker pointer has to the current address.
+		//nolint:gosec // G103: intentional use of unsafe for copy detection.
 		c.checker != unsafe.Pointer(c) {
 		panic("xsync: Cond is copied")
 	}

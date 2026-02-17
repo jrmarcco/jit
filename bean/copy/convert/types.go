@@ -1,6 +1,6 @@
-package converter
+package convert
 
-type Converter[S any, D any] interface {
+type Convertor[S any, D any] interface {
 	Convert(s S) (D, error)
 }
 

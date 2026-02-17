@@ -18,8 +18,8 @@ type RefCopier[S any, D any] struct {
 }
 
 func NewRefCopier[S any, D any](opts ...option.Opt[copyConf]) (*RefCopier[S, D], error) {
-	srcTyp := reflect.TypeOf(new(S)).Elem()
-	dstTyp := reflect.TypeOf(new(D)).Elem()
+	srcTyp := reflect.TypeFor[S]()
+	dstTyp := reflect.TypeFor[D]()
 
 	if srcTyp.Kind() != reflect.Struct {
 		return nil, errInvalidType("struct", srcTyp)
@@ -157,7 +157,7 @@ func (rc *RefCopier[S, D]) defaultCopyConf() copyConf {
 	}
 
 	if cc.covertFds == nil {
-		cc.covertFds = make(map[string]convertFunc, len(rc.defaultConf.covertFds))
+		cc.covertFds = make(map[string]convertor, len(rc.defaultConf.covertFds))
 	}
 
 	maps.Copy(cc.covertFds, rc.defaultConf.covertFds)

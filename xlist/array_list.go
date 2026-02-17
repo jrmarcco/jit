@@ -80,8 +80,8 @@ func NewArrayList[T any](size int) *ArrayList[T] {
 	}
 }
 
-func ArrayListOf[T any](slice []T) *ArrayList[T] {
+func ArrayListOf[T any](vals []T) *ArrayList[T] {
 	return &ArrayList[T]{
-		vals: slice,
+		vals: vals,
 	}
 }
