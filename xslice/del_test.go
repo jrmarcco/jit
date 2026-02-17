@@ -3,8 +3,9 @@ package xslice
 import (
 	"testing"
 
-	"github.com/jrmarcco/jit/internal/errs"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/jrmarcco/jit/internal/errs"
 )
 
 func TestDel(t *testing.T) {

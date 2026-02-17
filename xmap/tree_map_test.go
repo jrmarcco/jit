@@ -3,10 +3,11 @@ package xmap
 import (
 	"testing"
 
-	"github.com/jrmarcco/jit"
-	"github.com/jrmarcco/jit/xslice"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/jrmarcco/jit"
+	"github.com/jrmarcco/jit/xslice"
 )
 
 func cmp() jit.Comparator[int] {

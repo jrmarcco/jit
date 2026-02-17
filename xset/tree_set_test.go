@@ -3,9 +3,10 @@ package xset
 import (
 	"testing"
 
-	"github.com/jrmarcco/jit"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/jrmarcco/jit"
 )
 
 var cmp = jit.Comparator[int](func(a, b int) int {

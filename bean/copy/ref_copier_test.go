@@ -3,9 +3,10 @@ package copier
 import (
 	"testing"
 
-	"github.com/jrmarcco/jit"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/jrmarcco/jit"
 )
 
 func TestRefCopier_Copy(t *testing.T) {

@@ -3,8 +3,9 @@ package list
 import (
 	"testing"
 
-	"github.com/jrmarcco/jit"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/jrmarcco/jit"
 )
 
 var testCmp = func() jit.Comparator[int] {

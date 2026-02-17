@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/jrmarcco/jit/internal/errs"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/jrmarcco/jit/internal/errs"
 )
 
 func TestLinkedList(t *testing.T) {

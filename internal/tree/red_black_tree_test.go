@@ -3,9 +3,10 @@ package tree
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/jrmarcco/jit"
 	"github.com/jrmarcco/jit/internal/errs"
-	"github.com/stretchr/testify/assert"
 )
 
 var testCmp = func() jit.Comparator[int] {

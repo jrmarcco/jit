@@ -6,8 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jrmarcco/jit/bean/option"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/jrmarcco/jit/bean/option"
 )
 
 func poolInternalState(p *BlockTaskPool) int32 {
