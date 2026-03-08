@@ -312,12 +312,12 @@ func TestBlockTaskPool_State(t *testing.T) {
 		initG, queueSize := int32(1), int32(3)
 		p, waitCh := runningPoolWithFilledQueue(t, initG, queueSize)
 
-		ctx, cancel := context.WithTimeout(t.Context(), 3*time.Millisecond)
+		ctx, cancel := context.WithTimeout(t.Context(), 3*time.Millisecond) //nolint:gosec // 模拟 context 超时
 		stateCh, err := p.State(ctx, time.Millisecond)
 		assert.NoError(t, err)
 
 		go func() {
-			// 模拟 context 超时
+			// 模拟 context 超时。
 			<-time.After(3 * time.Millisecond)
 			cancel()
 		}()
@@ -341,7 +341,7 @@ func TestBlockTaskPool_State(t *testing.T) {
 		initG, queueSize := int32(1), int32(3)
 		p, waitCh := runningPoolWithFilledQueue(t, initG, queueSize)
 
-		ctx, cancel := context.WithCancel(t.Context())
+		ctx, cancel := context.WithCancel(t.Context()) //nolint:gosec // 模拟异步关闭
 		stateCh, err := p.State(ctx, time.Millisecond)
 		assert.NoError(t, err)
 
@@ -570,7 +570,7 @@ func TestBlockTaskPool_state_machine(t *testing.T) {
 			done := make(chan struct{}, queueSize)
 			for i := 0; i < int(queueSize); i++ {
 				err = p.Submit(t.Context(), TaskFunc(func(_ context.Context) error {
-					// 阻塞 task
+					// 阻塞 task。
 					<-done
 					return nil
 				}))
@@ -582,7 +582,7 @@ func TestBlockTaskPool_state_machine(t *testing.T) {
 			assert.Equal(t, stateRunning, poolInternalState(p))
 			assert.Equal(t, p.maxG, p.countG())
 
-			// 释放 task
+			// 释放 task。
 			close(done)
 		})
 
@@ -599,21 +599,21 @@ func TestBlockTaskPool_state_machine(t *testing.T) {
 			done := make(chan struct{}, queueSize)
 			for i := 0; i < int(queueSize); i++ {
 				err = p.Submit(t.Context(), TaskFunc(func(_ context.Context) error {
-					// 阻塞 task
+					// 阻塞 task。
 					<-done
 					return nil
 				}))
 				assert.NoError(t, err)
 			}
-			// 这个时候 queue 里有 15 个任务
+			// 这个时候 queue 里有 15 个任务。
 			assert.Equal(t, int32(0), p.countG())
 
-			// 启动后只会启动 10 个 goroutine 去执行任务（maxG = 10）
+			// 启动后只会启动 10 个 goroutine 去执行任务 ( maxG = 10 )。
 			assert.NoError(t, p.Start())
 			assert.Equal(t, stateRunning, poolInternalState(p))
 			assert.Equal(t, maxG, p.countG())
 
-			// 释放 task
+			// 释放 task。
 			close(done)
 		})
 	})
@@ -630,7 +630,7 @@ func TestBlockTaskPool_state_machine(t *testing.T) {
 
 		errChan := make(chan error)
 		go func() {
-			// 模拟并发 start
+			// 模拟并发 start。
 			time.Sleep(10 * time.Millisecond)
 			errChan <- p.Start()
 		}()
@@ -638,7 +638,7 @@ func TestBlockTaskPool_state_machine(t *testing.T) {
 		done := make(chan struct{}, queueSize)
 		for i := 0; i < int(queueSize); i++ {
 			err = p.Submit(t.Context(), TaskFunc(func(_ context.Context) error {
-				// 阻塞 task
+				// 阻塞 task。
 				<-done
 				return nil
 			}))
@@ -649,7 +649,7 @@ func TestBlockTaskPool_state_machine(t *testing.T) {
 		assert.Equal(t, stateRunning, poolInternalState(p))
 		assert.Equal(t, maxG, p.countG())
 
-		// 释放 task
+		// 释放 task。
 		close(done)
 	})
 
@@ -694,7 +694,7 @@ func TestBlockTaskPool_state_machine(t *testing.T) {
 		var err error
 		done := make(chan struct{})
 
-		// 这里要注意并发竞争：
+		// 这里要注意并发竞争。
 		// 提交 task 时，task 还在 p.queue 内还未被永久 goroutine 区间的 goroutine 取走就进行 p.allowToCreateG() 判断，
 		// 此时 p.queue 的 task 数会大于等于 1，也即是队列积压率大于 0，
 		// 就会创建核心 goroutine 去立即执行当前 task。
@@ -707,11 +707,11 @@ func TestBlockTaskPool_state_machine(t *testing.T) {
 		}
 
 		assert.Equal(t, 0, len(p.queue))
-		// 至少有 initG
-		// 这里用 LessOrEqual 判断是为了兼容并发竞争导致的核心 goroutine 创建
+		// 至少有 initG。
+		// 这里用 LessOrEqual 判断是为了兼容并发竞争导致的核心 goroutine 创建。
 		assert.LessOrEqual(t, initG, p.countG())
 
-		// 增加任务数 init -> core ( 8 -> 16 )
+		// 增加任务数 init -> core ( 8 -> 16 )。
 		for i := initG; i < coreG; i++ {
 			err = p.Submit(t.Context(), TaskFunc(func(_ context.Context) error {
 				<-done
@@ -721,10 +721,10 @@ func TestBlockTaskPool_state_machine(t *testing.T) {
 		}
 		assert.Equal(t, coreG, p.countG())
 
-		// 释放所有任务
+		// 释放所有任务。
 		close(done)
 
-		// 等待空闲后 goroutine 数恢复到 initG
+		// 等待空闲后 goroutine 数恢复到 initG。
 		for p.countG() > initG {
 		}
 		assert.Equal(t, initG, p.countG())
@@ -742,7 +742,7 @@ func TestBlockTaskPool_state_machine(t *testing.T) {
 		var err error
 		done := make(chan struct{})
 
-		// 这里要注意并发竞争：
+		// 这里要注意并发竞争。
 		// 提交 task 时，task 还在 p.queue 内还未被永久 goroutine 区间的 goroutine 取走就进行 p.allowToCreateG() 判断，
 		// 此时 p.queue 的 task 数会大于等于 1，也即是队列积压率大于 0，
 		// 就会创建核心 goroutine 去立即执行当前 task。
@@ -755,11 +755,11 @@ func TestBlockTaskPool_state_machine(t *testing.T) {
 		}
 
 		assert.Equal(t, 0, len(p.queue))
-		// 至少有 initG
-		// 这里用 LessOrEqual 判断是为了兼容并发竞争导致的核心 goroutine 创建
+		// 至少有 initG。
+		// 这里用 LessOrEqual 判断是为了兼容并发竞争导致的核心 goroutine 创建。
 		assert.LessOrEqual(t, initG, p.countG())
 
-		// 增加任务数 init -> core ( 8 -> 16 )
+		// 增加任务数 init -> core ( 8 -> 16 )。
 		for i := initG; i < coreG; i++ {
 			err = p.Submit(t.Context(), TaskFunc(func(_ context.Context) error {
 				<-done
@@ -769,7 +769,7 @@ func TestBlockTaskPool_state_machine(t *testing.T) {
 		}
 		assert.Equal(t, coreG, p.countG())
 
-		// 增加任务 core -> max ( 16 -> 32 )
+		// 增加任务 core -> max ( 16 -> 32 )。
 		for i := coreG; i < maxG; i++ {
 			err = p.Submit(t.Context(), TaskFunc(func(_ context.Context) error {
 				<-done
@@ -779,10 +779,10 @@ func TestBlockTaskPool_state_machine(t *testing.T) {
 		}
 		assert.Equal(t, maxG, p.countG())
 
-		// 释放所有任务
+		// 释放所有任务。
 		close(done)
 
-		// 等待空闲后 goroutine 数恢复到 initG
+		// 等待空闲后 goroutine 数恢复到 initG。
 		for p.countG() > initG {
 		}
 		assert.Equal(t, initG, p.countG())
