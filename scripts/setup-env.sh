@@ -1,4 +1,5 @@
-#!/bin/sh
+#!/usr/bin/env bash
+set -euo pipefail
 
 echo "🚀 install & update gofumpt ..."
 go install mvdan.cc/gofumpt@latest
