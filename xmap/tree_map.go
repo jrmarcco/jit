@@ -1,10 +1,7 @@
 package xmap
 
 import (
-	"errors"
-
 	"github.com/jrmarcco/jit"
-	"github.com/jrmarcco/jit/internal/errs"
 	"github.com/jrmarcco/jit/internal/tree"
 )
 
@@ -50,12 +47,8 @@ func (tm *TreeMap[K, V]) Vals() []V {
 }
 
 func (tm *TreeMap[K, V]) Put(key K, val V) error {
-	err := tm.tree.Put(key, val)
-	if err != nil && errors.Is(err, errs.ErrSameRBNode) {
-		// if the key already exists, update the value
-		return tm.tree.Set(key, val)
-	}
-	return err
+	tm.tree.Upsert(key, val)
+	return nil
 }
 
 func (tm *TreeMap[K, V]) Del(key K) (V, bool) {

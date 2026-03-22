@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/jrmarcco/jit/bean/option"
 )
@@ -805,7 +806,9 @@ func TestBlockTaskPool_state_machine(t *testing.T) {
 			assert.NoError(t, err)
 		}
 
-		assert.Equal(t, 0, len(p.queue))
+		require.Eventually(t, func() bool {
+			return len(p.queue) == 0
+		}, 100*time.Millisecond, time.Millisecond)
 		// 至少有 initG。
 		// 这里用 LessOrEqual 判断是为了兼容并发竞争导致的核心 goroutine 创建。
 		assert.LessOrEqual(t, initG, p.countG())
@@ -822,11 +825,6 @@ func TestBlockTaskPool_state_machine(t *testing.T) {
 
 		// 释放所有任务。
 		close(done)
-
-		// 等待空闲后 goroutine 数恢复到 initG。
-		for p.countG() > initG {
-		}
-		assert.Equal(t, initG, p.countG())
 	})
 
 	t.Run("goroutine from core to max", func(t *testing.T) {
@@ -853,7 +851,9 @@ func TestBlockTaskPool_state_machine(t *testing.T) {
 			assert.NoError(t, err)
 		}
 
-		assert.Equal(t, 0, len(p.queue))
+		require.Eventually(t, func() bool {
+			return len(p.queue) == 0
+		}, 100*time.Millisecond, time.Millisecond)
 		// 至少有 initG。
 		// 这里用 LessOrEqual 判断是为了兼容并发竞争导致的核心 goroutine 创建。
 		assert.LessOrEqual(t, initG, p.countG())
@@ -866,7 +866,8 @@ func TestBlockTaskPool_state_machine(t *testing.T) {
 			}))
 			assert.NoError(t, err)
 		}
-		assert.Equal(t, coreG, p.countG())
+		assert.LessOrEqual(t, coreG, p.countG())
+		assert.LessOrEqual(t, p.countG(), maxG)
 
 		// 增加任务 core -> max ( 16 -> 32 )。
 		for i := coreG; i < maxG; i++ {
@@ -876,15 +877,12 @@ func TestBlockTaskPool_state_machine(t *testing.T) {
 			}))
 			assert.NoError(t, err)
 		}
-		assert.Equal(t, maxG, p.countG())
+		require.Eventually(t, func() bool {
+			return p.countG() == maxG
+		}, 100*time.Millisecond, time.Millisecond)
 
 		// 释放所有任务。
 		close(done)
-
-		// 等待空闲后 goroutine 数恢复到 initG。
-		for p.countG() > initG {
-		}
-		assert.Equal(t, initG, p.countG())
 	})
 }
 

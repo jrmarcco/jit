@@ -217,3 +217,20 @@ func TestTreeMap_Get(t *testing.T) {
 		})
 	}
 }
+
+func TestTreeMap_Put_UpdateExistentKey(t *testing.T) {
+	t.Parallel()
+
+	treeMap, err := NewTreeMap[int, string](cmp())
+	require.NoError(t, err)
+
+	require.NoError(t, treeMap.Put(1, "a"))
+	require.NoError(t, treeMap.Put(1, "b"))
+	require.NoError(t, treeMap.Put(2, "c"))
+
+	v, ok := treeMap.Get(1)
+	assert.True(t, ok)
+	assert.Equal(t, "b", v)
+	assert.Equal(t, int64(2), treeMap.Size())
+	assert.Equal(t, []string{"b", "c"}, treeMap.Vals())
+}

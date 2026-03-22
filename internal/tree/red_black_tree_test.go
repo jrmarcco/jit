@@ -1,6 +1,8 @@
 package tree
 
 import (
+	"math/rand"
+	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -8,6 +10,21 @@ import (
 	"github.com/jrmarcco/jit"
 	"github.com/jrmarcco/jit/internal/errs"
 )
+
+//nolint:unparam // 测试方法
+func benchmarkShuffledKeys(size int) []int {
+	keys := make([]int, size)
+	for i := range size {
+		keys[i] = i + 1
+	}
+
+	//nolint:gosec // 测试用例，不需要使用更安全的随机数生成器。
+	r := rand.New(rand.NewSource(42))
+	r.Shuffle(size, func(i, j int) {
+		keys[i], keys[j] = keys[j], keys[i]
+	})
+	return keys
+}
 
 var testCmp = func() jit.Comparator[int] {
 	return func(a, b int) int { return a - b }
@@ -473,5 +490,188 @@ func TestRBTree_Get(t *testing.T) {
 
 			assert.Equal(t, tc.wantVal, val)
 		})
+	}
+}
+
+func TestRBTree_Upsert(t *testing.T) {
+	t.Parallel()
+
+	rbt := NewRBTree[int, int](testCmp)
+	rbt.Upsert(1, 1)
+	rbt.Upsert(1, 2)
+	rbt.Upsert(2, 3)
+
+	assert.Equal(t, int64(2), rbt.Size())
+	keys, vals := rbt.Kvs()
+	assert.Equal(t, []int{1, 2}, keys)
+	assert.Equal(t, []int{2, 3}, vals)
+	assert.True(t, validRBTree(rbt.root))
+}
+
+func TestRBTree_RandomOperations(t *testing.T) {
+	t.Parallel()
+
+	//nolint:gosec // 测试用例，不需要使用更安全的随机数生成器。
+	r := rand.New(rand.NewSource(12345))
+	rbt := NewRBTree[int, int](testCmp)
+	expected := make(map[int]int)
+
+	const (
+		opPut = iota
+		opSet
+		opUpsert
+		opGet
+	)
+
+	for i := 0; i < 5_000; i++ {
+		key := r.Intn(300)
+		val := r.Intn(10_000)
+
+		switch r.Intn(4) {
+		case opPut:
+			err := rbt.Put(key, val)
+			_, exists := expected[key]
+			if exists {
+				assert.Equal(t, errs.ErrSameRBNode, err)
+			} else {
+				assert.NoError(t, err)
+				expected[key] = val
+			}
+		case opSet:
+			err := rbt.Set(key, val)
+			_, exists := expected[key]
+			if exists {
+				assert.NoError(t, err)
+				expected[key] = val
+			} else {
+				assert.Equal(t, errs.ErrNodeNotFound, err)
+			}
+		case opUpsert:
+			rbt.Upsert(key, val)
+			expected[key] = val
+		case opGet:
+			got, err := rbt.Get(key)
+			expVal, exists := expected[key]
+			if exists {
+				assert.NoError(t, err)
+				assert.Equal(t, expVal, got)
+			} else {
+				assert.Equal(t, errs.ErrNodeNotFound, err)
+			}
+		}
+
+		assert.Equal(t, int64(len(expected)), rbt.Size())
+	}
+
+	keys := make([]int, 0, len(expected))
+	for k := range expected {
+		keys = append(keys, k)
+	}
+	sort.Ints(keys)
+
+	wantVals := make([]int, 0, len(keys))
+	for _, k := range keys {
+		wantVals = append(wantVals, expected[k])
+	}
+
+	gotKeys, gotVals := rbt.Kvs()
+	assert.Equal(t, keys, gotKeys)
+	assert.Equal(t, wantVals, gotVals)
+}
+
+func BenchmarkRBTree_Put(b *testing.B) {
+	keys := benchmarkShuffledKeys(10_000)
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		rbt := NewRBTree[int, int](testCmp)
+		for _, key := range keys {
+			_ = rbt.Put(key, key)
+		}
+	}
+}
+
+func BenchmarkRBTree_PutOrdered(b *testing.B) {
+	keys := make([]int, 10_000)
+	for i := range keys {
+		keys[i] = i + 1
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		rbt := NewRBTree[int, int](testCmp)
+		for _, key := range keys {
+			_ = rbt.Put(key, key)
+		}
+	}
+}
+
+func BenchmarkRBTree_PutReverseOrdered(b *testing.B) {
+	keys := make([]int, 10_000)
+	for i := range keys {
+		keys[i] = len(keys) - i
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		rbt := NewRBTree[int, int](testCmp)
+		for _, key := range keys {
+			_ = rbt.Put(key, key)
+		}
+	}
+}
+
+func BenchmarkRBTree_Get(b *testing.B) {
+	keys := benchmarkShuffledKeys(10_000)
+	rbt := NewRBTree[int, int](testCmp)
+	for _, key := range keys {
+		_ = rbt.Put(key, key)
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		key := keys[i%len(keys)]
+		_, _ = rbt.Get(key)
+	}
+}
+
+func BenchmarkRBTree_Del(b *testing.B) {
+	keys := benchmarkShuffledKeys(10_000)
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		rbt := NewRBTree[int, int](testCmp)
+		for _, key := range keys {
+			_ = rbt.Put(key, key)
+		}
+		for _, key := range keys {
+			_, _ = rbt.Del(key)
+		}
+	}
+}
+
+func BenchmarkRBTree_UpsertExisting(b *testing.B) {
+	keys := benchmarkShuffledKeys(10_000)
+	rbt := NewRBTree[int, int](testCmp)
+	for _, key := range keys {
+		_ = rbt.Put(key, key)
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		key := keys[i%len(keys)]
+		rbt.Upsert(key, i)
 	}
 }
