@@ -583,9 +583,8 @@ func BenchmarkRBTree_Put(b *testing.B) {
 	keys := benchmarkShuffledKeys(10_000)
 
 	b.ReportAllocs()
-	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		rbt := NewRBTree[int, int](testCmp)
 		for _, key := range keys {
 			_ = rbt.Put(key, key)
@@ -602,7 +601,7 @@ func BenchmarkRBTree_PutOrdered(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		rbt := NewRBTree[int, int](testCmp)
 		for _, key := range keys {
 			_ = rbt.Put(key, key)
@@ -617,9 +616,8 @@ func BenchmarkRBTree_PutReverseOrdered(b *testing.B) {
 	}
 
 	b.ReportAllocs()
-	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		rbt := NewRBTree[int, int](testCmp)
 		for _, key := range keys {
 			_ = rbt.Put(key, key)
@@ -635,9 +633,8 @@ func BenchmarkRBTree_Get(b *testing.B) {
 	}
 
 	b.ReportAllocs()
-	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for i := 0; b.Loop(); i++ {
 		key := keys[i%len(keys)]
 		_, _ = rbt.Get(key)
 	}
@@ -647,9 +644,8 @@ func BenchmarkRBTree_Del(b *testing.B) {
 	keys := benchmarkShuffledKeys(10_000)
 
 	b.ReportAllocs()
-	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		rbt := NewRBTree[int, int](testCmp)
 		for _, key := range keys {
 			_ = rbt.Put(key, key)
@@ -668,9 +664,8 @@ func BenchmarkRBTree_UpsertExisting(b *testing.B) {
 	}
 
 	b.ReportAllocs()
-	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for i := 0; b.Loop(); i++ {
 		key := keys[i%len(keys)]
 		rbt.Upsert(key, i)
 	}
