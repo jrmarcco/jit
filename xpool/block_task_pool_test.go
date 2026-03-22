@@ -1,4 +1,4 @@
-package pool
+package xpool
 
 import (
 	"context"
@@ -221,6 +221,25 @@ func TestNewBlockTaskPoolWithOption(t *testing.T) {
 		assert.Equal(t, 0.5, p.queueBacklogRate)
 	})
 
+	t.Run("with error queue size", func(t *testing.T) {
+		t.Parallel()
+
+		p, err := NewBlockTaskPool(1, 3, WithErrQueueSize(32))
+		assert.NoError(t, err)
+		assert.NotNil(t, p)
+		assert.Equal(t, 32, p.errQueueSize)
+		assert.Equal(t, 32, cap(p.errQueue))
+	})
+
+	t.Run("with error worker count", func(t *testing.T) {
+		t.Parallel()
+
+		p, err := NewBlockTaskPool(1, 3, WithErrWorkerCnt(2))
+		assert.NoError(t, err)
+		assert.NotNil(t, p)
+		assert.Equal(t, 2, p.errWorkerCnt)
+	})
+
 	t.Run("queue backlog rate is negative", func(t *testing.T) {
 		t.Parallel()
 
@@ -233,6 +252,46 @@ func TestNewBlockTaskPoolWithOption(t *testing.T) {
 		t.Parallel()
 
 		p, err := NewBlockTaskPool(1, 3, WithQueueBacklogRate(1.1))
+		assert.ErrorIs(t, err, errInvalidParam)
+		assert.Nil(t, p)
+	})
+
+	t.Run("max idle time is non-positive", func(t *testing.T) {
+		t.Parallel()
+
+		p, err := NewBlockTaskPool(1, 3, WithMaxIdleTime(0))
+		assert.ErrorIs(t, err, errInvalidParam)
+		assert.Nil(t, p)
+	})
+
+	t.Run("submit timeout is non-positive", func(t *testing.T) {
+		t.Parallel()
+
+		p, err := NewBlockTaskPool(1, 3, WithSubmitTimeout(0))
+		assert.ErrorIs(t, err, errInvalidParam)
+		assert.Nil(t, p)
+	})
+
+	t.Run("error handle timeout is non-positive", func(t *testing.T) {
+		t.Parallel()
+
+		p, err := NewBlockTaskPool(1, 3, WithErrHandleTimeout(0))
+		assert.ErrorIs(t, err, errInvalidParam)
+		assert.Nil(t, p)
+	})
+
+	t.Run("error queue size is non-positive", func(t *testing.T) {
+		t.Parallel()
+
+		p, err := NewBlockTaskPool(1, 3, WithErrQueueSize(0))
+		assert.ErrorIs(t, err, errInvalidParam)
+		assert.Nil(t, p)
+	})
+
+	t.Run("error worker count is non-positive", func(t *testing.T) {
+		t.Parallel()
+
+		p, err := NewBlockTaskPool(1, 3, WithErrWorkerCnt(0))
 		assert.ErrorIs(t, err, errInvalidParam)
 		assert.Nil(t, p)
 	})
@@ -270,6 +329,16 @@ func TestBlockTaskPool_State(t *testing.T) {
 
 		_, err = p.State(ctx, time.Millisecond)
 		assert.ErrorIs(t, err, context.Canceled)
+	})
+
+	t.Run("invalid interval", func(t *testing.T) {
+		t.Parallel()
+
+		p, err := NewBlockTaskPool(1, 1)
+		assert.NoError(t, err)
+
+		_, err = p.State(t.Context(), 0)
+		assert.ErrorIs(t, err, errInvalidParam)
 	})
 
 	t.Run("call after shutdown", func(t *testing.T) {
@@ -312,7 +381,7 @@ func TestBlockTaskPool_State(t *testing.T) {
 		initG, queueSize := int32(1), int32(3)
 		p, waitCh := runningPoolWithFilledQueue(t, initG, queueSize)
 
-		ctx, cancel := context.WithTimeout(t.Context(), 3*time.Millisecond) //nolint:gosec // 模拟 context 超时
+		ctx, cancel := context.WithTimeout(t.Context(), 3*time.Millisecond)
 		stateCh, err := p.State(ctx, time.Millisecond)
 		assert.NoError(t, err)
 
@@ -341,7 +410,7 @@ func TestBlockTaskPool_State(t *testing.T) {
 		initG, queueSize := int32(1), int32(3)
 		p, waitCh := runningPoolWithFilledQueue(t, initG, queueSize)
 
-		ctx, cancel := context.WithCancel(t.Context()) //nolint:gosec // 模拟异步关闭
+		ctx, cancel := context.WithCancel(t.Context())
 		stateCh, err := p.State(ctx, time.Millisecond)
 		assert.NoError(t, err)
 
@@ -547,6 +616,36 @@ func TestBlockTaskPool_Shutdown(t *testing.T) {
 
 	_, err = p2.ShutdownNow()
 	assert.ErrorIs(t, err, errPoolIsClosed)
+
+	t.Run("shutdown now returns original tasks", func(t *testing.T) {
+		t.Parallel()
+
+		p, err := NewBlockTaskPool(1, 2)
+		assert.NoError(t, err)
+		assert.NotNil(t, p)
+		assert.NoError(t, p.Start())
+
+		done := make(chan struct{})
+		hold := TaskFunc(func(_ context.Context) error {
+			<-done
+			return nil
+		})
+		left1 := TaskFunc(func(_ context.Context) error { return nil })
+		left2 := TaskFunc(func(_ context.Context) error { return nil })
+
+		assert.NoError(t, p.Submit(t.Context(), hold))
+		assert.NoError(t, p.Submit(t.Context(), left1))
+		assert.NoError(t, p.Submit(t.Context(), left2))
+
+		tasks, err := p.ShutdownNow()
+		close(done)
+		assert.NoError(t, err)
+		assert.Len(t, tasks, 2)
+		for _, task := range tasks {
+			_, ok := task.(*taskWrapper)
+			assert.False(t, ok, "ShutdownNow should return original tasks instead of wrappers")
+		}
+	})
 }
 
 func TestBlockTaskPool_state_machine(t *testing.T) {
@@ -787,4 +886,76 @@ func TestBlockTaskPool_state_machine(t *testing.T) {
 		}
 		assert.Equal(t, initG, p.countG())
 	})
+}
+
+func TestBlockTaskPool_allowToCreateG_UnbufferedQueue(t *testing.T) {
+	t.Parallel()
+
+	p, err := NewBlockTaskPool(1, 0, WithMaxG(2))
+	assert.NoError(t, err)
+	assert.NotNil(t, p)
+
+	// all workers busy: allow scale out under unbuffered queue
+	atomic.StoreInt32(&p.totalG, 1)
+	atomic.StoreInt32(&p.totalRunningG, 1)
+	assert.True(t, p.allowToCreateG())
+
+	// idle worker exists: no need to scale out
+	atomic.StoreInt32(&p.totalRunningG, 0)
+	assert.False(t, p.allowToCreateG())
+}
+
+func TestBlockTaskPool_handleTaskError_NonBlockingWhenQueueFull(t *testing.T) {
+	t.Parallel()
+
+	p, err := NewBlockTaskPool(1, 1, WithErrorHandler(func(context.Context, error) {}))
+	assert.NoError(t, err)
+	assert.NotNil(t, p)
+
+	for i := 0; i < cap(p.errQueue); i++ {
+		p.errQueue <- errInvalidTask
+	}
+
+	done := make(chan struct{})
+	go func() {
+		p.handleTaskError(errInvalidTask)
+		close(done)
+	}()
+
+	select {
+	case <-done:
+	case <-time.After(50 * time.Millisecond):
+		t.Fatal("handleTaskError should not block when error queue is full")
+	}
+	assert.Equal(t, int64(1), atomic.LoadInt64(&p.errDropCnt))
+}
+
+func TestBlockTaskPool_sendState_DropCounter(t *testing.T) {
+	t.Parallel()
+
+	p, err := NewBlockTaskPool(1, 1)
+	assert.NoError(t, err)
+	assert.NotNil(t, p)
+
+	ch := make(chan State)
+	p.sendState(ch, time.Now().UnixMilli())
+	assert.Equal(t, int64(1), atomic.LoadInt64(&p.stateDropCnt))
+}
+
+func TestBlockTaskPool_SubmitRetryCounter(t *testing.T) {
+	t.Parallel()
+
+	p, err := NewBlockTaskPool(1, 1, WithSubmitTimeout(2*time.Millisecond))
+	assert.NoError(t, err)
+	assert.NotNil(t, p)
+
+	// 先填满队列，下一次提交会进入重试路径。
+	err = p.Submit(t.Context(), TaskFunc(func(_ context.Context) error { return nil }))
+	assert.NoError(t, err)
+
+	ctx, cancel := context.WithTimeout(t.Context(), 2*time.Millisecond)
+	defer cancel()
+	err = p.Submit(ctx, TaskFunc(func(_ context.Context) error { return nil }))
+	assert.ErrorIs(t, err, context.DeadlineExceeded)
+	assert.NotZero(t, atomic.LoadInt64(&p.submitRetryCnt))
 }

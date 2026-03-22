@@ -1,4 +1,4 @@
-package pool
+package xpool
 
 import (
 	"context"
@@ -41,6 +41,10 @@ type State struct {
 
 	WaitingCnt int32
 	RunningCnt int32
+
+	SubmitRetryCnt int64
+	ErrDropCnt     int64
+	StateDropCnt   int64
 
 	PoolState int32
 
