@@ -1,8 +1,8 @@
 package copier
 
 import (
-	"github.com/jrmarcco/jit/bean/copy/convert"
-	"github.com/jrmarcco/jit/bean/option"
+	"github.com/jrmarcco/jit/xbean/copy/convert"
+	"github.com/jrmarcco/jit/xbean/option"
 	"github.com/jrmarcco/jit/xset"
 )
 

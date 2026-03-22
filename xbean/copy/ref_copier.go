@@ -6,7 +6,7 @@ import (
 	"slices"
 	"time"
 
-	"github.com/jrmarcco/jit/bean/option"
+	"github.com/jrmarcco/jit/xbean/option"
 	"github.com/jrmarcco/jit/xset"
 )
 
