@@ -392,7 +392,7 @@ func (p *BlockTaskPool) trySubmit(ctx context.Context, task Task, state int32) (
 				id := atomic.AddInt32(&p.id, 1)
 				go p.newG(id)
 
-				slog.Info("[xpool] create new goroutine", "id", id)
+				slog.Debug("[xpool] new goroutine created", "id", id)
 			}
 
 			// 任务池还未运行 或 当前不允许创建新的 goroutine，直接成功提交。
