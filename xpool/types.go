@@ -43,6 +43,7 @@ type State struct {
 	RunningCnt int32
 
 	SubmitRetryCnt int64
+	TaskTimeoutCnt int64
 	ErrDropCnt     int64
 	StateDropCnt   int64
 

@@ -2,6 +2,7 @@ package xpool
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"runtime"
@@ -18,9 +19,11 @@ const (
 	defaultMaxIdleTime      = 10 * time.Second
 	defaultSubmitTimeout    = 15 * time.Second
 	defaultErrHandleTimeout = 3 * time.Second
-	defaultSubmitBackoff    = 100 * time.Microsecond
 
-	maxSubmitBackoff = 2 * time.Millisecond
+	defaultTaskExecTimeout = 0
+
+	defaultSubmitBackoff = 100 * time.Microsecond
+	maxSubmitBackoff     = 2 * time.Millisecond
 
 	defaultErrQueueSize  = 128
 	defaultErrWorkerCnt  = 1
@@ -48,6 +51,17 @@ var (
 	errPoolIsLocked     = fmt.Errorf("[xpool] task pool is locked")
 )
 
+type taskExecTimeoutCtxKey struct{}
+
+// WithTaskExecTimeoutInContext 在 Submit 调用级别设置任务执行超时。
+// 取值为 0 时表示该次提交的任务不启用执行超时。
+func WithTaskExecTimeoutInContext(ctx context.Context, timeout time.Duration) context.Context {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	return context.WithValue(ctx, taskExecTimeoutCtxKey{}, timeout)
+}
+
 var _ Task = (*TaskFunc)(nil)
 
 type TaskFunc func(ctx context.Context) error
@@ -57,7 +71,8 @@ func (t TaskFunc) Run(ctx context.Context) error {
 }
 
 type taskWrapper struct {
-	task Task
+	task    Task
+	timeout time.Duration
 }
 
 func (t *taskWrapper) Run(ctx context.Context) (err error) {
@@ -130,13 +145,15 @@ type BlockTaskPool struct {
 
 	id int32 // goroutine id
 
-	maxIdleTime   time.Duration
-	submitTimeout time.Duration
+	maxIdleTime     time.Duration // goroutine 空闲超时时间
+	submitTimeout   time.Duration // 提交超时时间
+	taskExecTimeout time.Duration // 任务执行超时时间
 
 	state          int32 // 内部状态
 	totalG         int32 // goroutine 总数
 	totalRunningG  int32 // 正在执行任务的 goroutine 总数
 	submitRetryCnt int64
+	taskTimeoutCnt int64
 	errDropCnt     int64
 	stateDropCnt   int64
 
@@ -180,6 +197,14 @@ func WithMaxIdleTime(maxIdleTime time.Duration) option.Opt[BlockTaskPool] {
 func WithSubmitTimeout(submitTimeout time.Duration) option.Opt[BlockTaskPool] {
 	return func(p *BlockTaskPool) {
 		p.submitTimeout = submitTimeout
+	}
+}
+
+// WithTaskExecTimeout 配置任务执行超时时间。
+// 取值为 0 时表示不启用任务执行超时。
+func WithTaskExecTimeout(taskExecTimeout time.Duration) option.Opt[BlockTaskPool] {
+	return func(p *BlockTaskPool) {
+		p.taskExecTimeout = taskExecTimeout
 	}
 }
 
@@ -239,15 +264,15 @@ func NewBlockTaskPool(initG, queueSize int32, opts ...option.Opt[BlockTaskPool])
 
 		initG: initG,
 		coreG: initG,
+		maxG:  initG,
 
-		maxG:        initG,
-		maxIdleTime: defaultMaxIdleTime,
-
-		submitTimeout: defaultSubmitTimeout,
-
+		maxIdleTime:      defaultMaxIdleTime,
+		submitTimeout:    defaultSubmitTimeout,
+		taskExecTimeout:  defaultTaskExecTimeout,
 		errHandleTimeout: defaultErrHandleTimeout,
-		errQueueSize:     defaultErrQueueSize,
-		errWorkerCnt:     defaultErrWorkerCnt,
+
+		errQueueSize: defaultErrQueueSize,
+		errWorkerCnt: defaultErrWorkerCnt,
 	}
 
 	ctx := context.Background()
@@ -289,6 +314,9 @@ func NewBlockTaskPool(initG, queueSize int32, opts ...option.Opt[BlockTaskPool])
 	if p.submitTimeout <= 0 {
 		return nil, fmt.Errorf("%w: submit timeout should be greater than 0", errInvalidParam)
 	}
+	if p.taskExecTimeout < 0 {
+		return nil, fmt.Errorf("%w: task exec timeout should be greater or equal to 0", errInvalidParam)
+	}
 	if p.errHandleTimeout <= 0 {
 		return nil, fmt.Errorf("%w: err handle timeout should be greater than 0", errInvalidParam)
 	}
@@ -312,6 +340,12 @@ func (p *BlockTaskPool) Submit(ctx context.Context, task Task) error {
 		return errInvalidTask
 	}
 
+	// 解析任务执行超时时间。
+	taskExecTimeout, err := p.resolveTaskExecTimeout(ctx)
+	if err != nil {
+		return err
+	}
+
 	if _, hasDeadline := ctx.Deadline(); !hasDeadline {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, p.submitTimeout)
@@ -328,13 +362,15 @@ func (p *BlockTaskPool) Submit(ctx context.Context, task Task) error {
 		}
 
 		tw := &taskWrapper{
-			task: task,
+			task:    task,
+			timeout: taskExecTimeout,
 		}
 
 		// 尝试 created 路径 ( p.state == stateCreated )。
 		// 此时 pool 还没 Start，允许先把任务提交到队列 ( 只入队不扩容 )。
 		// trySubmit 会尝试把 pool state 临时 CAS 成 locked 状态，保证安全写队列。
-		ok, err := p.trySubmit(ctx, tw, stateCreated)
+		var ok bool
+		ok, err = p.trySubmit(ctx, tw, stateCreated)
 		if ok || err != nil {
 			return err
 		}
@@ -390,6 +426,8 @@ func (p *BlockTaskPool) trySubmit(ctx context.Context, task Task, state int32) (
 				// 任务池处于运行状态且允许创建新 goroutine 执行任务。
 				p.increaseG(1)
 				id := atomic.AddInt32(&p.id, 1)
+
+				//nolint:contextcheck // newG 方法在执行任务时候会为每个 task 创建独立的 context 隔离控制。
 				go p.newG(id)
 
 				slog.Debug("[xpool] new goroutine created", "id", id)
@@ -510,7 +548,14 @@ func (p *BlockTaskPool) processTask(id int32, task Task, ok bool, idleTimer *tim
 
 	// 成功获取可执行任务。
 	atomic.AddInt32(&p.totalRunningG, 1)
-	err := task.Run(p.interruptCtx)
+
+	runCtx, cancel := p.resolveTaskRunContext(task)
+	err := task.Run(runCtx)
+	if errors.Is(runCtx.Err(), context.DeadlineExceeded) {
+		atomic.AddInt64(&p.taskTimeoutCnt, 1)
+	}
+	cancel()
+
 	atomic.AddInt32(&p.totalRunningG, -1)
 
 	// 处理任务执行错误。
@@ -518,6 +563,29 @@ func (p *BlockTaskPool) processTask(id int32, task Task, ok bool, idleTimer *tim
 		p.handleTaskError(err)
 	}
 	return p.shouldContinue(id, idleTimer)
+}
+
+func (p *BlockTaskPool) resolveTaskExecTimeout(ctx context.Context) (time.Duration, error) {
+	taskExecTimeout := p.taskExecTimeout
+	if v := ctx.Value(taskExecTimeoutCtxKey{}); v != nil {
+		overrideTaskExecTimeout, ok := v.(time.Duration)
+		if !ok {
+			return 0, fmt.Errorf("%w: invalid task exec timeout in context", errInvalidParam)
+		}
+		taskExecTimeout = overrideTaskExecTimeout
+	}
+
+	if taskExecTimeout < 0 {
+		return 0, fmt.Errorf("%w: task exec timeout should be greater or equal to 0", errInvalidParam)
+	}
+	return taskExecTimeout, nil
+}
+
+func (p *BlockTaskPool) resolveTaskRunContext(task Task) (context.Context, context.CancelFunc) {
+	if tw, ok := task.(*taskWrapper); ok && tw.timeout > 0 {
+		return context.WithTimeout(p.interruptCtx, tw.timeout)
+	}
+	return p.interruptCtx, func() {}
 }
 
 // handleTaskError 处理任务执行错误。
@@ -794,14 +862,18 @@ func (p *BlockTaskPool) sendStateFinal(ch chan State, timestamp int64) {
 
 func (p *BlockTaskPool) getState(timestamp int64) State {
 	return State{
-		QueueSize:      int32(cap(p.queue)),
-		GoroutineCnt:   p.countG(),
-		WaitingCnt:     int32(len(p.queue)),
-		RunningCnt:     atomic.LoadInt32(&p.totalRunningG),
+		QueueSize:    int32(cap(p.queue)),
+		GoroutineCnt: p.countG(),
+
+		WaitingCnt: int32(len(p.queue)),
+		RunningCnt: atomic.LoadInt32(&p.totalRunningG),
+
 		SubmitRetryCnt: atomic.LoadInt64(&p.submitRetryCnt),
+		TaskTimeoutCnt: atomic.LoadInt64(&p.taskTimeoutCnt),
 		ErrDropCnt:     atomic.LoadInt64(&p.errDropCnt),
 		StateDropCnt:   atomic.LoadInt64(&p.stateDropCnt),
-		PoolState:      atomic.LoadInt32(&p.state),
-		Timestamp:      timestamp,
+
+		PoolState: atomic.LoadInt32(&p.state),
+		Timestamp: timestamp,
 	}
 }

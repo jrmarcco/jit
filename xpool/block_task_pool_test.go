@@ -144,6 +144,20 @@ func TestNewBlockTaskPoolWithOption(t *testing.T) {
 		assert.Equal(t, time.Second, p.submitTimeout)
 	})
 
+	t.Run("with task exec timeout", func(t *testing.T) {
+		t.Parallel()
+
+		p, err := NewBlockTaskPool(1, 3, WithTaskExecTimeout(time.Second))
+		assert.NoError(t, err)
+		assert.NotNil(t, p)
+		assert.Equal(t, stateCreated, poolInternalState(p))
+		assert.Equal(t, int32(1), p.initG)
+		assert.Equal(t, int32(1), p.coreG)
+		assert.Equal(t, int32(1), p.maxG)
+		assert.Equal(t, 3, cap(p.queue))
+		assert.Equal(t, time.Second, p.taskExecTimeout)
+	})
+
 	t.Run("with core goroutine", func(t *testing.T) {
 		t.Parallel()
 
@@ -269,6 +283,14 @@ func TestNewBlockTaskPoolWithOption(t *testing.T) {
 		t.Parallel()
 
 		p, err := NewBlockTaskPool(1, 3, WithSubmitTimeout(0))
+		assert.ErrorIs(t, err, errInvalidParam)
+		assert.Nil(t, p)
+	})
+
+	t.Run("task exec timeout is negative", func(t *testing.T) {
+		t.Parallel()
+
+		p, err := NewBlockTaskPool(1, 3, WithTaskExecTimeout(-time.Millisecond))
 		assert.ErrorIs(t, err, errInvalidParam)
 		assert.Nil(t, p)
 	})
@@ -956,4 +978,84 @@ func TestBlockTaskPool_SubmitRetryCounter(t *testing.T) {
 	err = p.Submit(ctx, TaskFunc(func(_ context.Context) error { return nil }))
 	assert.ErrorIs(t, err, context.DeadlineExceeded)
 	assert.NotZero(t, atomic.LoadInt64(&p.submitRetryCnt))
+}
+
+func TestBlockTaskPool_TaskExecTimeout(t *testing.T) {
+	t.Parallel()
+
+	t.Run("global task exec timeout", func(t *testing.T) {
+		t.Parallel()
+
+		errCh := make(chan error, 1)
+		p := runningPool(
+			t,
+			1,
+			1,
+			WithTaskExecTimeout(10*time.Millisecond),
+			WithErrorHandler(func(_ context.Context, err error) {
+				errCh <- err
+			}),
+		)
+
+		err := p.Submit(t.Context(), TaskFunc(func(ctx context.Context) error {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(100 * time.Millisecond):
+				return nil
+			}
+		}))
+		require.NoError(t, err)
+
+		select {
+		case got := <-errCh:
+			require.ErrorIs(t, got, context.DeadlineExceeded)
+		case <-time.After(200 * time.Millisecond):
+			t.Fatal("task should be canceled by global task exec timeout")
+		}
+		require.NotZero(t, atomic.LoadInt64(&p.taskTimeoutCnt))
+		require.NotZero(t, p.getState(time.Now().UnixMilli()).TaskTimeoutCnt)
+
+		tasks, shutdownErr := p.ShutdownNow()
+		require.NoError(t, shutdownErr)
+		require.Empty(t, tasks)
+	})
+
+	t.Run("submit context task exec timeout override", func(t *testing.T) {
+		t.Parallel()
+
+		errCh := make(chan error, 1)
+		p := runningPool(
+			t,
+			1,
+			1,
+			WithErrorHandler(func(_ context.Context, err error) {
+				errCh <- err
+			}),
+		)
+
+		submitCtx := WithTaskExecTimeoutInContext(t.Context(), 10*time.Millisecond)
+		err := p.Submit(submitCtx, TaskFunc(func(ctx context.Context) error {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(100 * time.Millisecond):
+				return nil
+			}
+		}))
+		require.NoError(t, err)
+
+		select {
+		case got := <-errCh:
+			require.ErrorIs(t, got, context.DeadlineExceeded)
+		case <-time.After(200 * time.Millisecond):
+			t.Fatal("task should be canceled by submit context task exec timeout")
+		}
+		require.NotZero(t, atomic.LoadInt64(&p.taskTimeoutCnt))
+		require.NotZero(t, p.getState(time.Now().UnixMilli()).TaskTimeoutCnt)
+
+		tasks, shutdownErr := p.ShutdownNow()
+		require.NoError(t, shutdownErr)
+		require.Empty(t, tasks)
+	})
 }
