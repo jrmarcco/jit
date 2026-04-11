@@ -138,6 +138,9 @@ var _ TaskPool = (*BlockTaskPool)(nil)
 
 // BlockTaskPool 并发阻塞的任务池。
 // 任务池会动态控制 goroutine 数量，按需创建 goroutine 执行任务。
+//
+// 建议使用 WithTaskExecTimeout 传入兜底的任务执行超时时间。
+// 避免满请求堆死 worker。
 type BlockTaskPool struct {
 	// 用于 goroutine 缩容/超时这类决策路径的短临界区。
 	// 提交与计数热点使用原子操作，减少整体锁竞争。
@@ -335,6 +338,10 @@ func NewBlockTaskPool(initG, queueSize int32, opts ...option.Opt[BlockTaskPool])
 //
 // 在队列已满的情况下，调用者会被阻塞。
 // 在 Start 方法被调用后仍然可以调用 Submit 方法。
+//
+// 注意：
+//
+//	强烈推荐在调用 Submit 时使用 WithTaskExecTimeout 配置任务执行超时时间。
 func (p *BlockTaskPool) Submit(ctx context.Context, task Task) error {
 	if task == nil {
 		return errInvalidTask
