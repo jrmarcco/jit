@@ -164,10 +164,10 @@ type BlockTaskPool struct {
 	errHandler       func(ctx context.Context, err error) // 错误处理器
 	errHandleTimeout time.Duration
 
-	errQueueSize int
+	errQueueSize int32
 	errQueue     chan error
 
-	errWorkerCnt int
+	errWorkerCnt int32
 	errWorkers   sync.Once
 }
 
@@ -213,13 +213,13 @@ func WithErrHandleTimeout(errHandleTimeout time.Duration) option.Opt[BlockTaskPo
 	}
 }
 
-func WithErrQueueSize(errQueueSize int) option.Opt[BlockTaskPool] {
+func WithErrQueueSize(errQueueSize int32) option.Opt[BlockTaskPool] {
 	return func(p *BlockTaskPool) {
 		p.errQueueSize = errQueueSize
 	}
 }
 
-func WithErrWorkerCnt(errWorkerCnt int) option.Opt[BlockTaskPool] {
+func WithErrWorkerCnt(errWorkerCnt int32) option.Opt[BlockTaskPool] {
 	return func(p *BlockTaskPool) {
 		p.errWorkerCnt = errWorkerCnt
 	}
@@ -538,7 +538,7 @@ func (p *BlockTaskPool) startErrorWorkers() {
 	}
 
 	p.errWorkers.Do(func() {
-		for i := 0; i < p.errWorkerCnt; i++ {
+		for i := int32(0); i < p.errWorkerCnt; i++ {
 			go p.errorWorker()
 		}
 	})
