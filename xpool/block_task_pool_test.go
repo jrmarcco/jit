@@ -228,7 +228,7 @@ func TestNewBlockTaskPoolWithOption(t *testing.T) {
 		p, err := NewBlockTaskPool(1, 3, WithErrQueueSize(32))
 		assert.NoError(t, err)
 		assert.NotNil(t, p)
-		assert.Equal(t, 32, p.errQueueSize)
+		assert.Equal(t, int32(32), p.errQueueSize)
 		assert.Equal(t, 32, cap(p.errQueue))
 	})
 
@@ -238,7 +238,7 @@ func TestNewBlockTaskPoolWithOption(t *testing.T) {
 		p, err := NewBlockTaskPool(1, 3, WithErrWorkerCnt(2))
 		assert.NoError(t, err)
 		assert.NotNil(t, p)
-		assert.Equal(t, 2, p.errWorkerCnt)
+		assert.Equal(t, int32(2), p.errWorkerCnt)
 	})
 
 	t.Run("queue backlog rate is negative", func(t *testing.T) {
