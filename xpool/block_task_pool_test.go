@@ -915,12 +915,12 @@ func TestBlockTaskPool_allowToCreateG_UnbufferedQueue(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, p)
 
-	// all workers busy: allow scale out under unbuffered queue
+	// 全部 worker 忙碌: 无缓冲队列时允许扩容
 	atomic.StoreInt32(&p.totalG, 1)
 	atomic.StoreInt32(&p.totalRunningG, 1)
 	assert.True(t, p.allowToCreateG())
 
-	// idle worker exists: no need to scale out
+	// 存在空闲 worker: 无需扩容
 	atomic.StoreInt32(&p.totalRunningG, 0)
 	assert.False(t, p.allowToCreateG())
 }

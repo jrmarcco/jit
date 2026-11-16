@@ -35,41 +35,35 @@ func validRBTree[K any, V any](root *rbNode[K, V]) bool {
 		return false
 	}
 
-	// count the number of black nodes on the path from the root to the farthest leaf
+	// 统计根到最左叶子路径上的黑色节点数。
+	// 哨兵 ( isNil ) 节点作为叶子，不计入。
 	cnt := 0
-	num := 0
 	node := root
-
-	// count the black nodes on the path to the leftmost leaf
-	for node != nil {
+	for node != nil && !node.isNil {
 		if node.getColor() == black {
 			cnt++
 		}
 		node = node.left
 	}
 
-	return validRBNode(root, cnt, num)
+	return validRBNode(root, cnt, 0)
 }
 
 func validRBNode[K, V any](node *rbNode[K, V], cnt, num int) bool {
-	if node == nil {
-		return true
+	// 叶子既可能是真正的 nil 子节点 ( 测试中手工构造的树 )，
+	// 也可能是共享哨兵 ( 经插入/删除构建的树 )。
+	// 每条根到叶的路径必须携带相同的黑计数。
+	if node == nil || node.isNil {
+		return num == cnt
 	}
 
-	// red node with red parent is invalid
+	// 红色节点的父节点也是红色则非法。
 	if node.getColor() == red && node.parent.getColor() == red {
 		return false
 	}
 
 	if node.getColor() == black {
 		num++
-	}
-
-	if node.left == nil && node.right == nil {
-		// leaf node
-		if num != cnt {
-			return false
-		}
 	}
 
 	return validRBNode(node.left, cnt, num) && validRBNode(node.right, cnt, num)
@@ -521,13 +515,14 @@ func TestRBTree_RandomOperations(t *testing.T) {
 		opSet
 		opUpsert
 		opGet
+		opDel
 	)
 
 	for range 5000 {
 		key := r.Intn(300)
 		val := r.Intn(10000)
 
-		switch r.Intn(4) {
+		switch r.Intn(5) {
 		case opPut:
 			err := rbt.Put(key, val)
 			_, exists := expected[key]
@@ -558,9 +553,21 @@ func TestRBTree_RandomOperations(t *testing.T) {
 			} else {
 				assert.Equal(t, errs.ErrNodeNotFound, err)
 			}
+		case opDel:
+			got, err := rbt.Del(key)
+			expVal, exists := expected[key]
+			if exists {
+				assert.NoError(t, err)
+				assert.Equal(t, expVal, got)
+				delete(expected, key)
+			} else {
+				assert.Equal(t, errs.ErrNodeNotFound, err)
+			}
 		}
 
 		assert.Equal(t, int64(len(expected)), rbt.Size())
+		// 每一步操作后树必须仍为合法红黑树。
+		assert.True(t, validRBTree(rbt.root), "red-black invariants broken, size=%d", rbt.Size())
 	}
 
 	keys := make([]int, 0, len(expected))

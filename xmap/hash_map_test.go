@@ -139,7 +139,7 @@ func TestHashMap_Del(t *testing.T) {
 		wantRes bool
 	}{
 		{
-			name: "basic",
+			name: tcBasic,
 			key:  testKey{id: 1},
 			hm: func() *HashMap[testKey, string] {
 				hm := NewHashMap[testKey, string](16)
@@ -237,13 +237,13 @@ func TestHashMap_Kvs(t *testing.T) {
 		wantSize int64
 	}{
 		{
-			name:     "empty",
+			name:     tcEmpty,
 			hm:       NewHashMap[testKey, string](16),
 			wantKeys: []testKey{},
 			wantVals: []string{},
 			wantSize: int64(0),
 		}, {
-			name: "basic",
+			name: tcBasic,
 			hm: func() *HashMap[testKey, string] {
 				hm := NewHashMap[testKey, string](16)
 				_ = hm.Put(testKey{id: 1}, "1")
@@ -287,7 +287,9 @@ func TestHashMap_Kvs(t *testing.T) {
 				"111",
 				"12",
 			},
-			wantSize: int64(2),
+			// 哈希碰撞的节点链在同一桶内 ( 桶数为 2 )，
+			// 但 Size 必须返回元素总数。
+			wantSize: int64(4),
 		},
 	}
 

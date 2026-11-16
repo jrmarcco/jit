@@ -25,14 +25,14 @@ func TestAdd(t *testing.T) {
 			index:   4,
 			item:    0,
 			wantRes: nil,
-			wantErr: errs.ErrIndexOutOfBounds(3, 4),
+			wantErr: errs.NewErrIndexOutOfBounds(3, 4),
 		}, {
 			name:    "add to non-empty slice at index negative",
 			slice:   []int{1, 2, 3},
 			index:   -1,
 			item:    0,
 			wantRes: nil,
-			wantErr: errs.ErrIndexOutOfBounds(3, -1),
+			wantErr: errs.NewErrIndexOutOfBounds(3, -1),
 		}, {
 			name:    "add to empty slice",
 			slice:   []int{},

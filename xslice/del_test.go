@@ -29,7 +29,7 @@ func TestDel(t *testing.T) {
 			slice:   []int{1, 2, 3},
 			index:   -1,
 			wantRes: []int{1, 2, 3},
-			wantErr: errs.ErrIndexOutOfBounds(3, -1),
+			wantErr: errs.NewErrIndexOutOfBounds(3, -1),
 		},
 	}
 
@@ -119,4 +119,30 @@ func TestFilterDel(t *testing.T) {
 			assert.Equal(t, tc.wantRes, res)
 		})
 	}
+}
+
+// TestDel_ZeroesTail 验证 Del 会清零腾出的尾部槽位，
+// 指针元素不残留引用。
+func TestDel_ZeroesTail(t *testing.T) {
+	t.Parallel()
+
+	a, b := 1, 2
+	src := []*int{&a, &b}
+
+	res, err := Del(src, 0)
+	assert.NoError(t, err)
+	assert.Equal(t, []*int{&b}, res)
+	assert.Nil(t, src[1], "the vacated tail slot must be zeroed")
+}
+
+// TestFilterDel_ZeroesTail 验证 FilterDel 会清零腾出的尾部。
+func TestFilterDel_ZeroesTail(t *testing.T) {
+	t.Parallel()
+
+	a, b := 1, 2
+	src := []*int{&a, &b}
+
+	res := FilterDel(src, func(_ int, elem *int) bool { return elem == &a })
+	assert.Equal(t, []*int{&b}, res)
+	assert.Nil(t, src[1], "the vacated tail slot must be zeroed")
 }

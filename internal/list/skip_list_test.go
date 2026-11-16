@@ -12,6 +12,12 @@ var testCmp = func() jit.Comparator[int] {
 	return func(a, b int) int { return a - b }
 }()
 
+// 表驱动用例名常量 ( goconst )。
+const (
+	tcBasic     = "basic"
+	tcEmptyList = "empty list"
+)
+
 func TestNewSkipList(t *testing.T) {
 	t.Parallel()
 
@@ -44,7 +50,7 @@ func TestSkipList_Insert(t *testing.T) {
 		wantSize  int
 	}{
 		{
-			name:      "basic",
+			name:      tcBasic,
 			list:      NewSkipList(testCmp),
 			val:       1,
 			wantSlice: []int{1},
@@ -96,7 +102,7 @@ func TestSkipList_Delete(t *testing.T) {
 		wantRes   bool
 	}{
 		{
-			name:      "basic",
+			name:      tcBasic,
 			list:      SkipListOf(testCmp, []int{1, 2, 3}),
 			val:       2,
 			wantSlice: []int{1, 3},
@@ -156,7 +162,7 @@ func TestSkipList_Exist(t *testing.T) {
 		wantRes bool
 	}{
 		{
-			name:    "basic",
+			name:    tcBasic,
 			list:    SkipListOf(testCmp, []int{1, 2, 3}),
 			target:  2,
 			wantRes: true,
@@ -166,7 +172,7 @@ func TestSkipList_Exist(t *testing.T) {
 			target:  4,
 			wantRes: false,
 		}, {
-			name:    "empty list",
+			name:    tcEmptyList,
 			list:    NewSkipList(testCmp),
 			target:  1,
 			wantRes: false,
@@ -194,7 +200,7 @@ func TestSkipList_GetByIndex(t *testing.T) {
 		wantRes bool
 	}{
 		{
-			name:    "basic",
+			name:    tcBasic,
 			list:    SkipListOf(testCmp, []int{1, 2, 3}),
 			idx:     1,
 			wantVal: 2,
@@ -206,7 +212,7 @@ func TestSkipList_GetByIndex(t *testing.T) {
 			wantVal: 0,
 			wantRes: false,
 		}, {
-			name:    "empty list",
+			name:    tcEmptyList,
 			list:    NewSkipList(testCmp),
 			idx:     0,
 			wantVal: 0,
@@ -260,12 +266,12 @@ func TestSkipList_Peek(t *testing.T) {
 		wantRes bool
 	}{
 		{
-			name:    "basic",
+			name:    tcBasic,
 			list:    SkipListOf(testCmp, []int{1, 2, 3}),
 			wantVal: 1,
 			wantRes: true,
 		}, {
-			name:    "empty list",
+			name:    tcEmptyList,
 			list:    NewSkipList(testCmp),
 			wantVal: 0,
 			wantRes: false,

@@ -1,7 +1,6 @@
 package xretry
 
 import (
-	"math"
 	"sync/atomic"
 	"time"
 
@@ -10,23 +9,29 @@ import (
 
 var _ Strategy = (*ExponentialBackoffStrategy)(nil)
 
+// ExponentialBackoffStrategy 为指数退避重试策略:
+// 间隔从 initialInterval 起，每次重试翻倍，封顶 maxInterval。
+// maxRetryTime <= 0 表示不限次数。
 type ExponentialBackoffStrategy struct {
 	initInterval time.Duration
 	maxInterval  time.Duration
 
+	// reachMaxInterval 标记间隔已达上限，后续直接返回 maxInterval。
 	reachMaxInterval atomic.Bool
 
 	maxTimes     int32
 	retriedTimes int32
 }
 
+// NewExponentialBackoffStrategy 创建指数退避策略。
+// initialInterval 必须大于 0 且不超过 maxInterval。
 func NewExponentialBackoffStrategy(initialInterval, maxInterval time.Duration, maxRetryTime int32) (*ExponentialBackoffStrategy, error) {
 	if initialInterval <= 0 {
-		return nil, errs.ErrInvalidInterval(initialInterval)
+		return nil, errs.NewErrInvalidInterval(initialInterval)
 	}
 
 	if initialInterval > maxInterval {
-		return nil, errs.ErrInvalidMaxInterval(initialInterval)
+		return nil, errs.NewErrInvalidMaxInterval(initialInterval, maxInterval)
 	}
 
 	return &ExponentialBackoffStrategy{
@@ -36,26 +41,25 @@ func NewExponentialBackoffStrategy(initialInterval, maxInterval time.Duration, m
 	}, nil
 }
 
+// Next 返回本次重试的等待间隔，超过 maxTimes 次后不再允许重试。
 func (e *ExponentialBackoffStrategy) Next() (time.Duration, bool) {
 	retriedTimes := atomic.AddInt32(&e.retriedTimes, 1)
-	return e.nextRetry(retriedTimes)
-}
-
-func (e *ExponentialBackoffStrategy) NextWithRetried(retriedTimes int32) (time.Duration, bool) {
-	return e.nextRetry(retriedTimes)
-}
-
-func (e *ExponentialBackoffStrategy) nextRetry(retriedTimes int32) (time.Duration, bool) {
 	if e.maxTimes <= 0 || retriedTimes <= e.maxTimes {
 		if e.reachMaxInterval.Load() {
 			return e.maxInterval, true
 		}
 
-		const two = 2
-		interval := e.initInterval * time.Duration(math.Pow(two, float64(retriedTimes-1)))
+		// interval = initialInterval * 2^(retriedTimes-1)。
+		// 移位超出 int64 范围时间隔必然超过 maxInterval，
+		// 直接封顶，不依赖溢出行为。
+		const maxShift = 62
+		if retriedTimes-1 > maxShift {
+			e.reachMaxInterval.Store(true)
+			return e.maxInterval, true
+		}
+		interval := e.initInterval << (retriedTimes - 1)
 
-		// interval = 0 prevents an input interval = 0 when create strategy.
-		// interval < 0 means the interval is over max int32 value after math.Pow.
+		// interval <= 0 覆盖移位后溢出为负数的情况。
 		if interval <= 0 || interval > e.maxInterval {
 			e.reachMaxInterval.Store(true)
 			return e.maxInterval, true
@@ -64,8 +68,4 @@ func (e *ExponentialBackoffStrategy) nextRetry(retriedTimes int32) (time.Duratio
 	}
 
 	return 0, false
-}
-
-func (e *ExponentialBackoffStrategy) Report(_ error) Strategy {
-	return e
 }

@@ -18,12 +18,12 @@ func TestSymmDiffSetFunc(t *testing.T) {
 		want []int
 	}{
 		{
-			name: "basic",
+			name: tcBasic,
 			src:  []int{1, 2, 3, 4, 5},
 			dst:  []int{4, 5, 6, 7, 8},
 			want: []int{1, 2, 3, 6, 7, 8},
 		}, {
-			name: "empty",
+			name: tcEmpty,
 			src:  []int{},
 			dst:  []int{},
 			want: []int{},
@@ -70,12 +70,12 @@ func TestSymmDiffSet(t *testing.T) {
 		want []int
 	}{
 		{
-			name: "basic",
+			name: tcBasic,
 			src:  []int{1, 2, 3, 4, 5},
 			dst:  []int{4, 5, 6, 7, 8},
 			want: []int{1, 2, 3, 6, 7, 8},
 		}, {
-			name: "empty",
+			name: tcEmpty,
 			src:  []int{},
 			dst:  []int{},
 			want: []int{},

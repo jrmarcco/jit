@@ -7,7 +7,12 @@ import (
 	"unsafe"
 )
 
+// Cond 为支持 context 的条件变量。
+//
+// 与标准库 sync.Cond 的差异:
+// Wait 接收 context，可在超时或取消时提前返回。
 type Cond struct {
+	// L 为 Wait 使用的外部锁 ( 与 sync.Cond.L 相同 )。
 	L sync.Locker
 
 	notifyList *notifyList
@@ -17,56 +22,56 @@ type Cond struct {
 	noCopy noCopy
 }
 
+// NewCond 创建 Cond，locker 为配套的外部锁。
 func NewCond(locker sync.Locker) *Cond {
 	return &Cond{
 		L: locker,
 	}
 }
 
-// Wait like Go standard library's sync.Cond.Wait.
-// have to lock the lock before calling Wait.
+// Wait 类似标准库 sync.Cond.Wait:
+// 调用前必须已持有锁 L。
 //
-// Wait will lock the lock and add the current goroutine to the wait list.
+// Wait 会先把当前 goroutine 加入等待队列，随后释放锁 L 并进入等待
+// ( 等待其他 goroutine 调用 Signal 或 Broadcast )。
 //
-// When Wait is invoked, the current goroutine will release the lock first and go to the wait list.
+// 被唤醒后 Wait 会重新加锁再返回，
+// 因此返回后调用方已重新持有锁，可以安全地检查条件与处理数据。
 //
-//	( waiting for other goroutines to invoke Signal or Broadcast ).
-//
-// After being notified, Wait will lock the lock and return.
-// The point of this is that can hold the lock again after the Wait method returns.
-// It is safe to check conditions and process data.
+// context 超时或取消时 Wait 返回 ctx.Err() ( 同样会重新加锁 )。
 func (c *Cond) Wait(ctx context.Context) error {
 	c.checkCopy()
 	c.initNotifyListOnce()
 
-	// put the current goroutine to the wait list.
+	// 把当前 goroutine 加入等待队列。
 	n := c.notifyList.add()
 
-	// before waiting, must lock the lock.
+	// 等待前必须先释放锁。
 	c.L.Unlock()
 	defer c.L.Lock()
 
 	return c.notifyList.wait(ctx, n)
 }
 
-// checkCopy checks whether the Cond is copied.
+// checkCopy 检测 Cond 是否被复制，被复制时 panic。
 func (c *Cond) checkCopy() {
-	// check the checker pointer is to the current address.
-	//nolint:gosec // G103: intentional use of unsafe for copy detection.
-	if c.checker != unsafe.Pointer(c) &&
-		// ensure the checker pointer is not changed ( checker pointer first assigned ).
-		// the checker pointer is nil when first created.
-		//nolint:gosec // G103: intentional use of unsafe for copy detection.
+	// 校验 checker 指针是否指向当前地址。
+	// 所有读取必须原子化，避免与下方的 CAS 构成数据竞争。
+	//nolint:gosec // G103: 复制检测需要故意使用 unsafe。
+	if atomic.LoadPointer(&c.checker) != unsafe.Pointer(c) &&
+		// 确保 checker 指针未被改写 ( checker 指针首次赋值 )。
+		// 新建时 checker 指针为 nil。
+		//nolint:gosec // G103: 复制检测需要故意使用 unsafe。
 		!atomic.CompareAndSwapPointer(&c.checker, nil, unsafe.Pointer(c)) &&
-		// check the checker pointer again.
-		// the checker pointer has to the current address.
-		//nolint:gosec // G103: intentional use of unsafe for copy detection.
-		c.checker != unsafe.Pointer(c) {
+		// 再次校验 checker 指针，
+		// 必须等于当前地址，否则说明发生了复制。
+		//nolint:gosec // G103: 复制检测需要故意使用 unsafe。
+		atomic.LoadPointer(&c.checker) != unsafe.Pointer(c) {
 		panic("xsync: Cond is copied")
 	}
 }
 
-// initNotifyListOnce initializes the notifyList.
+// initNotifyListOnce 惰性初始化 notifyList。
 func (c *Cond) initNotifyListOnce() {
 	c.once.Do(func() {
 		if c.notifyList == nil {
@@ -75,7 +80,7 @@ func (c *Cond) initNotifyListOnce() {
 	})
 }
 
-// Signal notify one goroutine that wait in Cond.
+// Signal 唤醒一个等待中的 goroutine ( 无等待者时不产生任何效果 )。
 func (c *Cond) Signal() {
 	c.checkCopy()
 	c.initNotifyListOnce()
@@ -83,7 +88,7 @@ func (c *Cond) Signal() {
 	c.notifyList.notifyOne()
 }
 
-// Broadcast notifies all goroutines that wait in Cond.
+// Broadcast 唤醒全部等待中的 goroutine。
 func (c *Cond) Broadcast() {
 	c.checkCopy()
 	c.initNotifyListOnce()
@@ -91,12 +96,13 @@ func (c *Cond) Broadcast() {
 	c.notifyList.notifyAll()
 }
 
+// notifyList 为等待队列: 以互斥锁保护的双向链表管理各等待者的通知 channel。
 type notifyList struct {
 	lock sync.Mutex
 	list *chanList
 }
 
-// add adds a new channel to the list.
+// add 新建一个节点并加入等待队列尾部，返回该节点。
 func (l *notifyList) add() *node {
 	l.lock.Lock()
 	defer l.lock.Unlock()
@@ -106,48 +112,45 @@ func (l *notifyList) add() *node {
 	return n
 }
 
-// wait waits for a channel to be notified.
+// wait 等待节点 n 的通知，返回 nil 表示被唤醒，
+// context 超时或取消时返回 ctx.Err()。
 func (l *notifyList) wait(ctx context.Context, n *node) error {
 	ch := n.Value
-	// put the node back in the pool.
-	// it's useful to reduce GC and memory allocation.
+	// 把节点归还对象池，减少 GC 与分配开销。
 	defer l.list.free(n)
 
 	select {
 	case <-ctx.Done():
-		// timeout or canceled.
+		// 超时或取消。
 		l.lock.Lock()
 		defer l.lock.Unlock()
 
 		select {
-		// double-check: notified before locked.
-		// if notified, notify next.
-		// why notify the next one?
-		//		if the notified channel is not consumed by the current goroutine,
-		//		then the other waiters will never receive the signal.
-		//		then the queue will be blocked.
-		//		you've been received a signal here means that you should be notified.
-		//		but you missed it ( context canceled or timeout ).
-		//		so need to notify the next one.
+		// 二次确认: 加锁前已收到通知。
+		// 若已收到通知，则向下传递唤醒下一个等待者。
+		// 为什么要唤醒下一个 ?
+		//   如果发给当前 channel 的信号没有被当前 goroutine 消费，
+		//   其他等待者将永远等不到信号，队列就此卡死。
+		//   此处既然收到了信号，说明本应唤醒的是当前 goroutine，
+		//   但它因 context 取消/超时放弃了等待，错过了信号，
+		//   因此需要把信号传递给下一个等待者。
 		case <-ch:
 			if l.list.len() != 0 {
 				l.notifyNext()
 			}
 		default:
-			// did not receive a signal until context canceled or timeout.
-			// means the invoker given up waiting for the signal.
-			// this node will never be notified anymore.
+			// 直到 context 取消/超时仍未收到信号，
+			// 说明调用方已放弃等待，该节点不会再被通知。
 			l.list.remove(n)
 		}
 		return ctx.Err()
 	case <-ch:
-		// notified.
+		// 收到通知。
 		return nil
 	}
 }
 
-// notifyOne notifies one channel in the list.
-// if the list is empty, notifyOne does nothing.
+// notifyOne 唤醒队列中最先入队的等待者，队列为空时不产生任何效果。
 func (l *notifyList) notifyOne() {
 	l.lock.Lock()
 	defer l.lock.Unlock()
@@ -158,18 +161,17 @@ func (l *notifyList) notifyOne() {
 	l.notifyNext()
 }
 
-// notifyNext notifies the next channel in the list.
+// notifyNext 唤醒队首等待者并将其移出队列。
 func (l *notifyList) notifyNext() {
 	front := l.list.front()
 	ch := front.Value
 	l.list.remove(front)
 
-	// send a signal to the channel.
+	// 发送唤醒信号 ( channel 容量为 1，且每个节点至多发一次，不会阻塞 )。
 	ch <- struct{}{}
 }
 
-// notifyAll notifies all channels in the list.
-// if the list is empty, notifyAll does nothing.
+// notifyAll 唤醒队列中的全部等待者，队列为空时不产生任何效果。
 func (l *notifyList) notifyAll() {
 	l.lock.Lock()
 	defer l.lock.Unlock()
@@ -179,6 +181,7 @@ func (l *notifyList) notifyAll() {
 	}
 }
 
+// newNotifyList 创建 notifyList。
 func newNotifyList() *notifyList {
 	return &notifyList{
 		lock: sync.Mutex{},
@@ -186,33 +189,30 @@ func newNotifyList() *notifyList {
 	}
 }
 
-// node is used to store the channels.
-// is a linked list element.
+// node 为存储通知 channel 的双向链表节点。
 type node struct {
 	prev  *node
 	next  *node
 	Value chan struct{}
 }
 
-// chanList is a double-linked list for saving the channels.
-// use pool to reuse list elements.
+// chanList 为双向链表 + 对象池复用节点。
 type chanList struct {
-	// in the double-linked list,
-	// sentinel is in the middle of the list.
-	// the list front is sentinel.next,
-	// and the list back is sentinel.prev.
+	// 双向循环链表以哨兵为中心:
+	// 链表头为 sentinel.next，链表尾为 sentinel.prev。
 	// [sentinel] <-> node1 <-> node2 <-> [sentinel]
-	//            		↑         ↑
-	//          	front        tail
-	// when sentinel.prev and sentinel.next are sentinel itself means the list is empty.
+	//              ↑          ↑
+	//            front       tail
+	// sentinel.prev 与 sentinel.next 均指向 sentinel 自身时链表为空。
 	sentinel *node
 	size     int64
 	pool     *sync.Pool
 }
 
+// newChanList 创建 chanList。
 func newChanList() *chanList {
 	sentinel := &node{}
-	// list is empty, sentinel.prev and sentinel.next are sentinel itself.
+	// 空链表: sentinel 的 prev 与 next 均指向自身。
 	sentinel.next = sentinel
 	sentinel.prev = sentinel
 
@@ -229,8 +229,7 @@ func newChanList() *chanList {
 	}
 }
 
-// allocate returns a node from the pool.
-// if the pool is empty, a new node is created.
+// allocate 从对象池取出一个节点。
 func (l *chanList) allocate() *node {
 	n, ok := l.pool.Get().(*node)
 	if !ok {
@@ -239,7 +238,7 @@ func (l *chanList) allocate() *node {
 	return n
 }
 
-// pushBack adds a new node to the back of the list.
+// pushBack 把节点加入链表尾部。
 func (l *chanList) pushBack(n *node) {
 	n.next = l.sentinel
 	n.prev = l.sentinel.prev
@@ -248,8 +247,7 @@ func (l *chanList) pushBack(n *node) {
 	l.size++
 }
 
-// remove removes a node from the list.
-// n must not be nil.
+// remove 把节点移出链表，n 不能为 nil。
 func (l *chanList) remove(n *node) {
 	n.prev.next = n.next
 	n.next.prev = n.prev
@@ -258,21 +256,22 @@ func (l *chanList) remove(n *node) {
 	l.size--
 }
 
-// free put the node back in the pool.
+// free 把节点归还对象池。
 func (l *chanList) free(n *node) {
 	l.pool.Put(n)
 }
 
-// front returns the first node of the list.
-// if the list is empty, nil is returned.
+// front 返回链表头节点，链表为空时返回哨兵自身。
 func (l *chanList) front() *node {
 	return l.sentinel.next
 }
 
+// len 返回链表长度。
 func (l *chanList) len() int64 {
 	return l.size
 }
 
+// noCopy 用于配合 go vet 的 copylocks 检测 Cond 被复制。
 type noCopy struct{}
 
 func (*noCopy) Lock()   {}

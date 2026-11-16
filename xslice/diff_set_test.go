@@ -18,12 +18,12 @@ func TestDiffSet(t *testing.T) {
 		exp  []int
 	}{
 		{
-			name: "empty src",
+			name: tcEmptySrc,
 			src:  []int{},
 			dst:  []int{1, 2, 3},
 			exp:  []int{},
 		}, {
-			name: "empty dst",
+			name: tcEmptyDst,
 			src:  []int{1, 2, 3},
 			dst:  []int{},
 			exp:  []int{1, 2, 3},
@@ -65,12 +65,12 @@ func TestDiffSetFunc(t *testing.T) {
 		exp  []int
 	}{
 		{
-			name: "empty src",
+			name: tcEmptySrc,
 			src:  []int{},
 			dst:  []int{1, 2, 3},
 			exp:  []int{},
 		}, {
-			name: "empty dst",
+			name: tcEmptyDst,
 			src:  []int{1, 2, 3},
 			dst:  []int{},
 			exp:  []int{1, 2, 3},

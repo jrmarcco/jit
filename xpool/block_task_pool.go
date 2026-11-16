@@ -39,16 +39,15 @@ const (
 )
 
 var (
-	errTaskRunningPanic = fmt.Errorf("[xpool] panic when running task, stack")
+	errTaskRunningPanic = errors.New("[xpool] panic when running task, stack")
 
-	errInvalidParam = fmt.Errorf("[xpool] invalid param")
-	errInvalidTask  = fmt.Errorf("[xpool] invalid task")
+	errInvalidParam = errors.New("[xpool] invalid param")
+	errInvalidTask  = errors.New("[xpool] invalid task")
 
-	errPoolIsNotRunning = fmt.Errorf("[xpool] task pool is not running")
-	errPoolIsRunning    = fmt.Errorf("[xpool] task pool is running")
-	errPoolIsClosing    = fmt.Errorf("[xpool] task pool is closing")
-	errPoolIsClosed     = fmt.Errorf("[xpool] task pool is closed")
-	errPoolIsLocked     = fmt.Errorf("[xpool] task pool is locked")
+	errPoolIsNotRunning = errors.New("[xpool] task pool is not running")
+	errPoolIsRunning    = errors.New("[xpool] task pool is running")
+	errPoolIsClosing    = errors.New("[xpool] task pool is closing")
+	errPoolIsClosed     = errors.New("[xpool] task pool is closed")
 )
 
 type taskExecTimeoutCtxKey struct{}
@@ -300,7 +299,7 @@ func NewBlockTaskPool(initG, queueSize int32, opts ...option.Opt[BlockTaskPool])
 		p.coreG = p.maxG
 	}
 
-	if !(p.initG <= p.coreG && p.coreG <= p.maxG) {
+	if p.initG > p.coreG || p.coreG > p.maxG {
 		return nil, fmt.Errorf("%w: goroutine required to satisfy [ init <= core <= max ]", errInvalidParam)
 	}
 
@@ -359,6 +358,12 @@ func (p *BlockTaskPool) Submit(ctx context.Context, task Task) error {
 		defer cancel()
 	}
 
+	// taskWrapper 在重试循环外构造，避免每次退避重试都重新分配。
+	tw := &taskWrapper{
+		task:    task,
+		timeout: taskExecTimeout,
+	}
+
 	backoff := defaultSubmitBackoff
 	for {
 		if atomic.LoadInt32(&p.state) == stateClosing {
@@ -366,11 +371,6 @@ func (p *BlockTaskPool) Submit(ctx context.Context, task Task) error {
 		}
 		if atomic.LoadInt32(&p.state) == stateClosed {
 			return errPoolIsClosed
-		}
-
-		tw := &taskWrapper{
-			task:    task,
-			timeout: taskExecTimeout,
 		}
 
 		// 尝试 created 路径 ( p.state == stateCreated )。
@@ -713,7 +713,10 @@ func (p *BlockTaskPool) Start() error {
 			return errPoolIsRunning
 		}
 		if atomic.LoadInt32(&p.state) == stateLocked {
-			return errPoolIsLocked
+			// stateLocked 是 Submit 的瞬态状态。
+			// 这里让出时间片后重试，而不是把瞬态状态当作错误返回。
+			runtime.Gosched()
+			continue
 		}
 
 		if atomic.CompareAndSwapInt32(&p.state, stateCreated, stateLocked) {

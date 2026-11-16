@@ -2,7 +2,8 @@ package xmap
 
 import "github.com/jrmarcco/jit/internal/errs"
 
-// Keys return a slice of the keys in the map.
+// Keys 返回 map 中所有 key 组成的切片。
+// 基于迭代器的替代写法可参考 slices.Collect(maps.Keys(m))。
 func Keys[K comparable, V any](m map[K]V) []K {
 	keys := make([]K, 0, len(m))
 	for k := range m {
@@ -11,7 +12,8 @@ func Keys[K comparable, V any](m map[K]V) []K {
 	return keys
 }
 
-// Vals returns a slice of the values in the map.
+// Vals 返回 map 中所有 value 组成的切片。
+// 基于迭代器的替代写法可参考 slices.Collect(maps.Values(m))。
 func Vals[K comparable, V any](m map[K]V) []V {
 	vals := make([]V, 0, len(m))
 	for _, v := range m {
@@ -20,13 +22,13 @@ func Vals[K comparable, V any](m map[K]V) []V {
 	return vals
 }
 
-// MapKV is a key-value pair of a map.
+// MapKV 为 map 的键值对。
 type MapKV[K comparable, V any] struct {
 	Key K
 	Val V
 }
 
-// KeysVals returns a slice of the key-value pairs in the map.
+// KeysVals 返回 map 中所有键值对组成的切片。
 func KeysVals[K comparable, V any](m map[K]V) []MapKV[K, V] {
 	keys := make([]MapKV[K, V], 0, len(m))
 	for k, v := range m {
@@ -35,6 +37,7 @@ func KeysVals[K comparable, V any](m map[K]V) []MapKV[K, V] {
 	return keys
 }
 
+// Merge 合并多个 map，重复 key 由后出现的 map 覆盖。
 func Merge[K comparable, V any](maps ...map[K]V) map[K]V {
 	defaultMergeFunc := func(_ V, second V) V {
 		return second
@@ -42,6 +45,8 @@ func Merge[K comparable, V any](maps ...map[K]V) map[K]V {
 	return MergeFunc(defaultMergeFunc, maps...)
 }
 
+// MergeFunc 合并多个 map，重复 key 的取值由 mergeFunc 决定
+// ( 入参为已存在的值与新值，返回最终保留的值 )。
 func MergeFunc[K comparable, V any](mergeFunc func(_ V, second V) V, maps ...map[K]V) map[K]V {
 	totalLen := 0
 	for _, m := range maps {
@@ -61,15 +66,13 @@ func MergeFunc[K comparable, V any](mergeFunc func(_ V, second V) V, maps ...map
 	return res
 }
 
-// ToMap converts a slice of keys and a slice of values to a map.
+// ToMap 由等长的 keys 与 vals 切片构建 map。
+// nil 切片视为空切片；长度不一致时返回错误；
+// 重复 key 保留最后一个值。
 func ToMap[K comparable, V any](keys []K, vals []V) (map[K]V, error) {
-	if keys == nil || vals == nil {
-		return nil, errs.NilErr("keys or vals")
-	}
-
 	keyLen := len(keys)
 	if keyLen != len(vals) {
-		return nil, errs.ErrInvalidKeyValLen()
+		return nil, errs.NewErrInvalidKeyValLen()
 	}
 
 	res := make(map[K]V, keyLen)

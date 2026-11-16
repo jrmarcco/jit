@@ -1,6 +1,8 @@
 package xslice
 
-// Map maps a slice to a new slice using a function.
+import "slices"
+
+// Map 通过 fn 把切片映射为新切片。
 func Map[Src any, Dst any](src []Src, fn func(idx int, src Src) Dst) []Dst {
 	dst := make([]Dst, len(src))
 
@@ -11,8 +13,8 @@ func Map[Src any, Dst any](src []Src, fn func(idx int, src Src) Dst) []Dst {
 	return dst
 }
 
-// MapPtr maps a slice to a new slice using a function that takes a pointer to the source element.
-// This avoids copying large structs when iterating.
+// MapPtr 与 Map 相同，但 fn 接收源元素的指针，
+// 避免迭代大结构体时的复制开销。
 func MapPtr[Src any, Dst any](src []Src, fn func(idx int, src *Src) Dst) []Dst {
 	dst := make([]Dst, len(src))
 
@@ -23,7 +25,8 @@ func MapPtr[Src any, Dst any](src []Src, fn func(idx int, src *Src) Dst) []Dst {
 	return dst
 }
 
-// FilterMap filters and maps a slice using a function.
+// FilterMap 同时完成过滤与映射:
+// fn 返回 ok 为 true 时才把结果计入返回切片。
 func FilterMap[Src any, Dst any](src []Src, filter func(idx int, src Src) (Dst, bool)) []Dst {
 	dst := make([]Dst, 0, len(src))
 
@@ -36,8 +39,8 @@ func FilterMap[Src any, Dst any](src []Src, filter func(idx int, src Src) (Dst, 
 	return dst
 }
 
-// FilterMapPtr filters and maps a slice using a function that takes a pointer to the source element.
-// This avoids copying large structs when iterating.
+// FilterMapPtr 与 FilterMap 相同，但 filter 接收源元素的指针，
+// 避免迭代大结构体时的复制开销。
 func FilterMapPtr[Src any, Dst any](src []Src, filter func(idx int, src *Src) (Dst, bool)) []Dst {
 	dst := make([]Dst, 0, len(src))
 
@@ -50,8 +53,8 @@ func FilterMapPtr[Src any, Dst any](src []Src, filter func(idx int, src *Src) (D
 	return dst
 }
 
-// ToMap converts a slice to a map.
-// the key is the result of the function.
+// ToMap 把切片转换为 map，key 由 fn 生成，value 为元素本身。
+// 重复 key 保留最后一个元素。
 func ToMap[K comparable, V any](slice []V, fn func(elem V) K) map[K]V {
 	res := make(map[K]V, len(slice))
 	for i := range slice {
@@ -60,8 +63,8 @@ func ToMap[K comparable, V any](slice []V, fn func(elem V) K) map[K]V {
 	return res
 }
 
-// ToMapWithVal converts a slice to a map.
-// the key and value are the result of the function.
+// ToMapWithVal 把切片转换为 map，key 与 value 均由 fn 生成。
+// 重复 key 保留最后一对。
 func ToMapWithVal[E any, K comparable, V any](slice []E, fn func(elem E) (K, V)) map[K]V {
 	res := make(map[K]V, len(slice))
 	for i := range slice {
@@ -71,18 +74,18 @@ func ToMapWithVal[E any, K comparable, V any](slice []E, fn func(elem E) (K, V))
 	return res
 }
 
-// deDuplicateFunc returns a slice of unique elements.
+// deDuplicateFunc 返回去重后的切片 ( 相等性由 eq 定义，保序 )。时间复杂度 O(n²)。
 func deDuplicateFunc[T comparable](slice []T, eq eqFunc[T]) []T {
 	res := make([]T, 0, len(slice))
 	for i := range slice {
-		if !ContainsFunc(slice[i+1:], func(t T) bool { return eq(slice[i], t) }) {
+		if !slices.ContainsFunc(slice[i+1:], func(t T) bool { return eq(slice[i], t) }) {
 			res = append(res, slice[i])
 		}
 	}
 	return res
 }
 
-// deDuplicate returns a slice of unique elements without preserving the order.
+// deDuplicate 返回去重后的切片 ( 不保序 )。
 func deDuplicate[T comparable](slice []T) []T {
 	m := toMap(slice)
 	res := make([]T, 0, len(m))
@@ -92,7 +95,7 @@ func deDuplicate[T comparable](slice []T) []T {
 	return res
 }
 
-// toMap converts a slice to a map.
+// toMap 把切片转换为集合 ( 仅含 key 的 map )。
 func toMap[T comparable](slice []T) map[T]struct{} {
 	m := make(map[T]struct{}, len(slice))
 	for i := range slice {

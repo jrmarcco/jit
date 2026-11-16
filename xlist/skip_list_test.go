@@ -23,7 +23,7 @@ func TestSkipList_Insert(t *testing.T) {
 		wantSize  int
 	}{
 		{
-			name:      "basic",
+			name:      tcBasic,
 			list:      NewSkipList(testCmp),
 			val:       1,
 			wantSlice: []int{1},
@@ -41,7 +41,7 @@ func TestSkipList_Insert(t *testing.T) {
 			wantSlice: []int{1, 2, 2, 3},
 			wantSize:  4,
 		}, {
-			name: "insert to head",
+			name: tcInsertToHead,
 			list: func() *SkipList[int] {
 				sl := NewSkipList(testCmp)
 				sl.Insert(1)
@@ -55,7 +55,7 @@ func TestSkipList_Insert(t *testing.T) {
 			},
 			wantSize: 4,
 		}, {
-			name: "insert to tail",
+			name: tcInsertToTail,
 			list: func() *SkipList[int] {
 				sl := NewSkipList(testCmp)
 				sl.Insert(1)
@@ -92,7 +92,7 @@ func TestSkipList_Delete(t *testing.T) {
 		wantRes   bool
 	}{
 		{
-			name: "basic",
+			name: tcBasic,
 			list: func() *SkipList[int] {
 				sl := NewSkipList(testCmp)
 				sl.Insert(1)
@@ -175,7 +175,7 @@ func TestSkipList_Exist(t *testing.T) {
 		wantRes bool
 	}{
 		{
-			name: "basic",
+			name: tcBasic,
 			list: func() *SkipList[int] {
 				sl := NewSkipList(testCmp)
 				sl.Insert(1)
@@ -197,7 +197,7 @@ func TestSkipList_Exist(t *testing.T) {
 			target:  4,
 			wantRes: false,
 		}, {
-			name:    "empty list",
+			name:    tcEmptyList,
 			list:    NewSkipList(testCmp),
 			target:  1,
 			wantRes: false,
@@ -225,7 +225,7 @@ func TestSkipList_GetByIndex(t *testing.T) {
 		wantRes bool
 	}{
 		{
-			name: "basic",
+			name: tcBasic,
 			list: func() *SkipList[int] {
 				sl := NewSkipList(testCmp)
 				sl.Insert(1)
@@ -249,7 +249,7 @@ func TestSkipList_GetByIndex(t *testing.T) {
 			wantVal: 0,
 			wantRes: false,
 		}, {
-			name:    "empty list",
+			name:    tcEmptyList,
 			list:    NewSkipList(testCmp),
 			idx:     0,
 			wantVal: 0,
@@ -327,7 +327,7 @@ func TestSkipList_Peek(t *testing.T) {
 		wantRes bool
 	}{
 		{
-			name: "basic",
+			name: tcBasic,
 			list: func() *SkipList[int] {
 				sl := NewSkipList(testCmp)
 				sl.Insert(1)
@@ -338,7 +338,7 @@ func TestSkipList_Peek(t *testing.T) {
 			wantVal: 1,
 			wantRes: true,
 		}, {
-			name:    "empty list",
+			name:    tcEmptyList,
 			list:    NewSkipList(testCmp),
 			wantVal: 0,
 			wantRes: false,

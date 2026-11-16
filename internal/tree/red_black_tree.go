@@ -1,3 +1,4 @@
+// Package tree 实现 xmap.TreeMap 底层的红黑树。
 package tree
 
 import (
@@ -406,7 +407,9 @@ func (rbt *RBTree[K, V]) fixupBlackUncleLeftChild(node *rbNode[K, V]) *rbNode[K,
 	grandparent.setColor(red)
 	rbt.rightRotate(grandparent)
 
-	return node.parent
+	// 与 fixupBlackUncleRightChild 对称 ( CLRS 语义 )：
+	// 旋转染色后 node 的父节点为黑色，循环条件自然终止。
+	return node
 }
 
 // fixupBlackUncleRightChild 处理“叔叔黑 + 父在右” ( 按 RL/RR 做旋转与重染色 )。

@@ -11,10 +11,16 @@ type param struct {
 	val  int64
 }
 
+// 表驱动用例间复用的 map key ( goconst )。
+const (
+	keyFirst  = "first"
+	keySecond = "second"
+)
+
 func TestMap_Load(t *testing.T) {
 	t.Parallel()
 
-	p := &param{name: "first", val: 1}
+	p := &param{name: keyFirst, val: 1}
 	empty := &param{}
 
 	tcs := []struct {
@@ -26,40 +32,40 @@ func TestMap_Load(t *testing.T) {
 	}{
 		{
 			name: "basic",
-			key:  "first",
+			key:  keyFirst,
 			m: func() *Map[string, *param] {
 				m := Map[string, *param]{}
-				m.Store("first", p)
+				m.Store(keyFirst, p)
 				return &m
 			},
 			wantVal: p,
 			wantRes: true,
 		}, {
 			name: "not exist",
-			key:  "second",
+			key:  keySecond,
 			m: func() *Map[string, *param] {
 				m := Map[string, *param]{}
-				m.Store("first", p)
+				m.Store(keyFirst, p)
 				return &m
 			},
 			wantVal: nil,
 			wantRes: false,
 		}, {
 			name: "nil item",
-			key:  "first",
+			key:  keyFirst,
 			m: func() *Map[string, *param] {
 				m := Map[string, *param]{}
-				m.Store("first", nil)
+				m.Store(keyFirst, nil)
 				return &m
 			},
 			wantVal: nil,
 			wantRes: true,
 		}, {
 			name: "empty item",
-			key:  "first",
+			key:  keyFirst,
 			m: func() *Map[string, *param] {
 				m := Map[string, *param]{}
-				m.Store("first", empty)
+				m.Store(keyFirst, empty)
 				return &m
 			},
 			wantVal: empty,
@@ -86,9 +92,9 @@ func TestMap_LoadOrStore(t *testing.T) {
 		t.Parallel()
 
 		m := Map[string, *param]{}
-		p := &param{name: "first", val: 1}
+		p := &param{name: keyFirst, val: 1}
 
-		val, ok := m.LoadOrStore("first", p)
+		val, ok := m.LoadOrStore(keyFirst, p)
 		assert.False(t, ok)
 		assert.Same(t, p, val)
 	})
@@ -97,13 +103,13 @@ func TestMap_LoadOrStore(t *testing.T) {
 		t.Parallel()
 
 		m := Map[string, *param]{}
-		p := &param{name: "first", val: 1}
+		p := &param{name: keyFirst, val: 1}
 
-		val, ok := m.LoadOrStore("first", p)
+		val, ok := m.LoadOrStore(keyFirst, p)
 		assert.False(t, ok)
 		assert.Same(t, p, val)
 
-		val, ok = m.LoadOrStore("first", &param{name: "second", val: 2})
+		val, ok = m.LoadOrStore(keyFirst, &param{name: keySecond, val: 2})
 		assert.True(t, ok)
 		assert.Same(t, p, val)
 	})
@@ -113,7 +119,7 @@ func TestMap_LoadOrStore(t *testing.T) {
 
 		m := Map[string, *param]{}
 
-		val, ok := m.LoadOrStore("first", nil)
+		val, ok := m.LoadOrStore(keyFirst, nil)
 		assert.False(t, ok)
 		assert.Nil(t, val)
 	})
@@ -123,12 +129,12 @@ func TestMap_LoadOrStore(t *testing.T) {
 
 		m := Map[string, *param]{}
 
-		val, ok := m.LoadOrStore("first", nil)
+		val, ok := m.LoadOrStore(keyFirst, nil)
 		assert.False(t, ok)
 		assert.Nil(t, val)
 
-		p := &param{name: "first", val: 1}
-		val, ok = m.LoadOrStore("first", p)
+		p := &param{name: keyFirst, val: 1}
+		val, ok = m.LoadOrStore(keyFirst, p)
 		assert.True(t, ok)
 		assert.Nil(t, val)
 	})
@@ -141,15 +147,15 @@ func TestMap_LoadAndDelete(t *testing.T) {
 		t.Parallel()
 
 		m := Map[string, *param]{}
-		p := &param{name: "first", val: 1}
+		p := &param{name: keyFirst, val: 1}
 
-		m.Store("first", p)
+		m.Store(keyFirst, p)
 
-		val, ok := m.LoadAndDelete("first")
+		val, ok := m.LoadAndDelete(keyFirst)
 		assert.True(t, ok)
 		assert.Same(t, p, val)
 
-		val, ok = m.Load("first")
+		val, ok = m.Load(keyFirst)
 		assert.False(t, ok)
 		assert.Nil(t, val)
 	})
@@ -158,13 +164,13 @@ func TestMap_LoadAndDelete(t *testing.T) {
 		t.Parallel()
 
 		m := Map[string, *param]{}
-		m.Store("first", nil)
+		m.Store(keyFirst, nil)
 
-		val, ok := m.LoadAndDelete("first")
+		val, ok := m.LoadAndDelete(keyFirst)
 		assert.True(t, ok)
 		assert.Nil(t, val)
 
-		val, ok = m.Load("first")
+		val, ok = m.Load(keyFirst)
 		assert.False(t, ok)
 		assert.Nil(t, val)
 	})
@@ -174,22 +180,22 @@ func TestMap_Delete(t *testing.T) {
 	t.Parallel()
 
 	m := Map[string, *param]{}
-	p1 := &param{name: "first", val: 1}
-	p2 := &param{name: "second", val: 2}
+	p1 := &param{name: keyFirst, val: 1}
+	p2 := &param{name: keySecond, val: 2}
 
-	m.Store("first", p1)
-	m.Store("second", p2)
+	m.Store(keyFirst, p1)
+	m.Store(keySecond, p2)
 
-	val, ok := m.Load("first")
+	val, ok := m.Load(keyFirst)
 	assert.True(t, ok)
 	assert.Same(t, p1, val)
 
-	m.Delete("first")
-	val, ok = m.Load("first")
+	m.Delete(keyFirst)
+	val, ok = m.Load(keyFirst)
 	assert.False(t, ok)
 	assert.Nil(t, val)
 
-	val, ok = m.Load("second")
+	val, ok = m.Load(keySecond)
 	assert.True(t, ok)
 	assert.Same(t, p2, val)
 }
@@ -201,20 +207,20 @@ func TestMap_Range(t *testing.T) {
 		t.Parallel()
 
 		m := Map[string, *param]{}
-		p1 := &param{name: "first", val: 1}
-		p2 := &param{name: "second", val: 2}
+		p1 := &param{name: keyFirst, val: 1}
+		p2 := &param{name: keySecond, val: 2}
 		empty := &param{}
 
-		m.Store("first", p1)
-		m.Store("second", p2)
+		m.Store(keyFirst, p1)
+		m.Store(keySecond, p2)
 		m.Store("third", nil)
 		m.Store("fourth", empty)
 
 		wantRes := map[string]*param{
-			"first":  p1,
-			"second": p2,
-			"third":  nil,
-			"fourth": empty,
+			keyFirst:  p1,
+			keySecond: p2,
+			"third":   nil,
+			"fourth":  empty,
 		}
 
 		res := make(map[string]*param, 4)
@@ -231,20 +237,20 @@ func TestMap_Range(t *testing.T) {
 		t.Parallel()
 
 		m := Map[string, param]{}
-		p1 := param{name: "first", val: 1}
-		p2 := param{name: "second", val: 2}
+		p1 := param{name: keyFirst, val: 1}
+		p2 := param{name: keySecond, val: 2}
 		empty := param{}
 
-		m.Store("first", p1)
-		m.Store("second", p2)
+		m.Store(keyFirst, p1)
+		m.Store(keySecond, p2)
 		m.Store("third", param{})
 		m.Store("fourth", empty)
 
 		wantRes := map[string]param{
-			"first":  p1,
-			"second": p2,
-			"third":  {},
-			"fourth": empty,
+			keyFirst:  p1,
+			keySecond: p2,
+			"third":   {},
+			"fourth":  empty,
 		}
 
 		res := make(map[string]param, 4)

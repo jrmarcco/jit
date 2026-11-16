@@ -1,6 +1,6 @@
 package xslice
 
-// Reverse reverses a slice in place.
+// Reverse 返回元素逆序的新切片，不修改原切片。
 func Reverse[T any](slice []T) []T {
 	length := len(slice)
 	reversed := make([]T, length)
@@ -8,12 +8,4 @@ func Reverse[T any](slice []T) []T {
 		reversed[length-i-1] = v
 	}
 	return reversed
-}
-
-// ReverseInPlace reverses a slice in place.
-func ReverseInPlace[T any](slice []T) {
-	length := len(slice)
-	for i, j := 0, length-1; i < j; i, j = i+1, j-1 {
-		slice[i], slice[j] = slice[j], slice[i]
-	}
 }

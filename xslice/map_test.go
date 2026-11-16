@@ -18,17 +18,17 @@ func TestMap(t *testing.T) {
 		want []int
 	}{
 		{
-			name: "basic",
+			name: tcBasic,
 			src:  []int{1, 2, 3},
 			fn:   func(_ int, src int) int { return src * 2 },
 			want: []int{2, 4, 6},
 		}, {
-			name: "empty",
+			name: tcEmpty,
 			src:  []int{},
 			fn:   func(_ int, src int) int { return src * 2 },
 			want: []int{},
 		}, {
-			name: "nil",
+			name: tcNil,
 			src:  nil,
 			fn:   func(_ int, src int) int { return src * 2 },
 			want: nil,
@@ -55,22 +55,22 @@ func TestFilterMap(t *testing.T) {
 		want []int
 	}{
 		{
-			name: "basic",
+			name: tcBasic,
 			src:  []int{1, 2, 3, 4, 5},
 			fn:   func(idx int, src int) (int, bool) { return src * 2, idx%2 == 0 },
 			want: []int{2, 6, 10},
 		}, {
-			name: "empty",
+			name: tcEmpty,
 			src:  []int{},
 			fn:   func(idx int, src int) (int, bool) { return src * 2, idx%2 == 0 },
 			want: []int{},
 		}, {
-			name: "nil",
+			name: tcNil,
 			src:  nil,
 			fn:   func(idx int, src int) (int, bool) { return src * 2, idx%2 == 0 },
 			want: nil,
 		}, {
-			name: "no match",
+			name: tcNoMatch,
 			src:  []int{1, 2, 3, 4, 5},
 			fn:   func(_ int, src int) (int, bool) { return src * 2, src > 10 },
 			want: []int{},
@@ -97,17 +97,17 @@ func TestToMap(t *testing.T) {
 		want map[string]int
 	}{
 		{
-			name: "basic",
+			name: tcBasic,
 			src:  []int{1, 2, 3, 4, 5},
 			fn:   strconv.Itoa,
 			want: map[string]int{"1": 1, "2": 2, "3": 3, "4": 4, "5": 5},
 		}, {
-			name: "empty",
+			name: tcEmpty,
 			src:  []int{},
 			fn:   strconv.Itoa,
 			want: map[string]int{},
 		}, {
-			name: "nil",
+			name: tcNil,
 			src:  nil,
 			fn:   strconv.Itoa,
 			want: map[string]int{},
@@ -134,17 +134,17 @@ func TestToMapWithVal(t *testing.T) {
 		want map[string]int
 	}{
 		{
-			name: "basic",
+			name: tcBasic,
 			src:  []int{1, 2, 3, 4, 5},
 			fn:   func(elem int) (string, int) { return strconv.Itoa(elem), elem },
 			want: map[string]int{"1": 1, "2": 2, "3": 3, "4": 4, "5": 5},
 		}, {
-			name: "empty",
+			name: tcEmpty,
 			src:  []int{},
 			fn:   func(elem int) (string, int) { return strconv.Itoa(elem), elem },
 			want: map[string]int{},
 		}, {
-			name: "nil",
+			name: tcNil,
 			src:  nil,
 			fn:   func(elem int) (string, int) { return strconv.Itoa(elem), elem },
 			want: map[string]int{},

@@ -16,15 +16,15 @@ func TestKeys(t *testing.T) {
 		want []int
 	}{
 		{
-			name: "basic",
+			name: tcBasic,
 			m:    map[int]int{1: 1, 2: 2, 3: 3},
 			want: []int{1, 2, 3},
 		}, {
-			name: "empty",
+			name: tcEmpty,
 			m:    map[int]int{},
 			want: []int{},
 		}, {
-			name: "nil",
+			name: tcNil,
 			m:    nil,
 			want: []int{},
 		},
@@ -45,15 +45,15 @@ func TestVals(t *testing.T) {
 		want []int
 	}{
 		{
-			name: "basic",
+			name: tcBasic,
 			m:    map[int]int{1: 1, 2: 2, 3: 3},
 			want: []int{1, 2, 3},
 		}, {
-			name: "empty",
+			name: tcEmpty,
 			m:    map[int]int{},
 			want: []int{},
 		}, {
-			name: "nil",
+			name: tcNil,
 			m:    nil,
 			want: []int{},
 		},
@@ -74,15 +74,15 @@ func TestKeysVals(t *testing.T) {
 		want []MapKV[int, int]
 	}{
 		{
-			name: "basic",
+			name: tcBasic,
 			m:    map[int]int{1: 1, 2: 2, 3: 3},
 			want: []MapKV[int, int]{{Key: 1, Val: 1}, {Key: 2, Val: 2}, {Key: 3, Val: 3}},
 		}, {
-			name: "empty",
+			name: tcEmpty,
 			m:    map[int]int{},
 			want: []MapKV[int, int]{},
 		}, {
-			name: "nil",
+			name: tcNil,
 			m:    nil,
 			want: []MapKV[int, int]{},
 		},
@@ -105,7 +105,7 @@ func TestToMap(t *testing.T) {
 		wantErr error
 	}{
 		{
-			name:    "basic",
+			name:    tcBasic,
 			keys:    []int{1, 2, 3},
 			vals:    []int{1, 2, 3},
 			wantRes: map[int]int{1: 1, 2: 2, 3: 3},
@@ -114,44 +114,62 @@ func TestToMap(t *testing.T) {
 			name:    "nil keys",
 			keys:    nil,
 			vals:    []int{1, 2, 3},
-			wantRes: nil,
-			wantErr: errs.NilErr("keys or vals"),
+			wantErr: errs.NewErrInvalidKeyValLen(),
 		}, {
 			name:    "nil vals",
 			keys:    []int{1, 2, 3},
 			vals:    nil,
-			wantRes: nil,
-			wantErr: errs.NilErr("keys or vals"),
+			wantErr: errs.NewErrInvalidKeyValLen(),
 		}, {
 			name:    "different lengths",
 			keys:    []int{1, 2, 3},
 			vals:    []int{1, 2},
 			wantRes: nil,
-			wantErr: errs.ErrInvalidKeyValLen(),
+			wantErr: errs.NewErrInvalidKeyValLen(),
 		}, {
 			name:    "empty keys",
 			keys:    []int{},
 			vals:    []int{1, 2, 3},
-			wantRes: map[int]int{},
-			wantErr: nil,
+			wantErr: errs.NewErrInvalidKeyValLen(),
 		}, {
 			name:    "empty vals",
 			keys:    []int{1, 2, 3},
 			vals:    []int{},
+			wantErr: errs.NewErrInvalidKeyValLen(),
+		}, {
+			name:    "both nil",
+			keys:    nil,
+			vals:    nil,
 			wantRes: map[int]int{},
+			wantErr: nil,
+		}, {
+			name:    "both empty",
+			keys:    []int{},
+			vals:    []int{},
+			wantRes: map[int]int{},
+			wantErr: nil,
+		}, {
+			name:    "duplicate keys keep last value",
+			keys:    []int{1, 1, 2},
+			vals:    []int{10, 20, 30},
+			wantRes: map[int]int{1: 20, 2: 30},
 			wantErr: nil,
 		},
 	}
 
 	for _, tc := range tcs {
-		res, err := ToMap(tc.keys, tc.vals)
-		assert.Equal(t, tc.wantErr, err)
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 
-		if err != nil {
-			return
-		}
+			res, err := ToMap(tc.keys, tc.vals)
+			assert.Equal(t, tc.wantErr, err)
 
-		assert.Equal(t, tc.wantRes, res)
+			if err != nil {
+				return
+			}
+
+			assert.Equal(t, tc.wantRes, res)
+		})
 	}
 }
 
@@ -164,7 +182,7 @@ func TestMerge(t *testing.T) {
 		wantRes map[int]int
 	}{
 		{
-			name: "basic",
+			name: tcBasic,
 			maps: []map[int]int{
 				{1: 1, 2: 2, 3: 3},
 				{4: 4, 5: 5, 6: 6},
@@ -225,7 +243,7 @@ func TestMergeFunc(t *testing.T) {
 		wantRes   map[int]int
 	}{
 		{
-			name: "basic",
+			name: tcBasic,
 			maps: []map[int]int{
 				{1: 1, 2: 2, 3: 3},
 				{4: 4, 5: 5, 6: 6},

@@ -1,3 +1,5 @@
+// Package xpool 提供任务池实现。
+// 当前包含一个动态伸缩 goroutine 的并发阻塞任务池 BlockTaskPool。
 package xpool
 
 import (

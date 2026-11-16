@@ -46,7 +46,7 @@ func TestRetry(t *testing.T) {
 				require.NoError(t, err)
 				return s
 			}(),
-			wantErr: errs.ErrRetryTimeExhausted(bizErr),
+			wantErr: errs.NewErrRetryTimeExhausted(bizErr),
 		},
 	}
 

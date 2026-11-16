@@ -1,22 +1,8 @@
 package xslice
 
-// IndexFunc returns the index of the first element that matches the condition.
-func IndexFunc[T comparable](slice []T, match matchFunc[T]) int {
-	for k, v := range slice {
-		if match(v) {
-			return k
-		}
-	}
-	return -1
-}
-
-// Index returns the index of the first occurrence of elem in slice.
-func Index[T comparable](slice []T, elem T) int {
-	return IndexFunc(slice, func(t T) bool { return t == elem })
-}
-
-// LastIndexFunc returns the index of the last element that matches the condition.
-func LastIndexFunc[T comparable](slice []T, match matchFunc[T]) int {
+// LastIndexFunc 返回最后一个满足条件元素的下标，不存在时返回 -1。
+// 标准库 slices 包没有等价函数。
+func LastIndexFunc[T any](slice []T, match matchFunc[T]) int {
 	for k := len(slice) - 1; k >= 0; k-- {
 		if match(slice[k]) {
 			return k
@@ -25,13 +11,13 @@ func LastIndexFunc[T comparable](slice []T, match matchFunc[T]) int {
 	return -1
 }
 
-// LastIndex returns the index of the last occurrence of elem in slice.
+// LastIndex 返回 elem 最后一次出现的下标，不存在时返回 -1。
 func LastIndex[T comparable](slice []T, elem T) int {
 	return LastIndexFunc(slice, func(t T) bool { return t == elem })
 }
 
-// IndexAllFunc returns all indices of elements that match the condition.
-func IndexAllFunc[T comparable](slice []T, match matchFunc[T]) []int {
+// IndexAllFunc 返回所有满足条件元素的下标。
+func IndexAllFunc[T any](slice []T, match matchFunc[T]) []int {
 	res := make([]int, 0, len(slice)>>2+1)
 	for k, v := range slice {
 		if match(v) {
@@ -41,7 +27,7 @@ func IndexAllFunc[T comparable](slice []T, match matchFunc[T]) []int {
 	return res
 }
 
-// IndexAll returns all indices of elements that match the condition.
+// IndexAll 返回所有等于 elem 的元素下标。
 func IndexAll[T comparable](slice []T, elem T) []int {
 	return IndexAllFunc(slice, func(t T) bool { return t == elem })
 }

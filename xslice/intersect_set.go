@@ -1,17 +1,21 @@
 package xslice
 
-// IntersectSetFunc returns the intersection of two slices.
+import "slices"
+
+// IntersectSetFunc 返回两个切片的交集 ( 相等性由 eq 定义 )。
+// 结果保持 src 的顺序。
 func IntersectSetFunc[T comparable](src, dst []T, eq eqFunc[T]) []T {
 	res := make([]T, 0, len(src))
 	for _, v := range src {
-		if ContainsFunc(dst, func(t T) bool { return eq(v, t) }) {
+		if slices.ContainsFunc(dst, func(t T) bool { return eq(v, t) }) {
 			res = append(res, v)
 		}
 	}
 	return deDuplicateFunc(res, eq)
 }
 
-// IntersectSet returns the intersection of two slices.
+// IntersectSet 返回两个切片的交集。
+// 返回元素的顺序不做保证。
 func IntersectSet[T comparable](src, dst []T) []T {
 	m := toMap(src)
 	res := make([]T, 0, len(m))

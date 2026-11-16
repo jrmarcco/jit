@@ -32,7 +32,7 @@ func TestAdd(t *testing.T) {
 			index:   -1,
 			item:    0,
 			wantRes: []int{1, 2, 3, 0},
-			wantErr: errs.ErrIndexOutOfBounds(3, -1),
+			wantErr: errs.NewErrIndexOutOfBounds(3, -1),
 		},
 	}
 

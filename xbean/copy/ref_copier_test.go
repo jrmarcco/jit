@@ -9,6 +9,9 @@ import (
 	"github.com/jrmarcco/jit"
 )
 
+// strTest 为表驱动用例间复用的样例字符串 ( goconst )。
+const strTest = "test"
+
 func TestRefCopier_Copy(t *testing.T) {
 	t.Parallel()
 
@@ -29,13 +32,13 @@ func TestRefCopier_Copy(t *testing.T) {
 				return copier.Copy(&basicSrc{
 					IntVal: 1,
 					IntPtr: jit.Ptr(1),
-					StrVal: "test",
+					StrVal: strTest,
 				})
 			},
 			wantDst: &basicDst{
 				IntVal: 1,
 				IntPtr: jit.Ptr(1),
-				StrVal: "test",
+				StrVal: strTest,
 			},
 		}, {
 			name: "struct with no field",
@@ -58,14 +61,14 @@ func TestRefCopier_Copy(t *testing.T) {
 
 				return copier.Copy(&priFdSrc{
 					IntVal: 1,
-					StrVal: "test",
+					StrVal: strTest,
 					pri:    param{Val: "pri"},
 					priPtr: &param{Val: "priPtr"},
 				})
 			},
 			wantDst: &priFdDst{
 				IntVal: 1,
-				StrVal: "test",
+				StrVal: strTest,
 				priVal: param{},
 				priPtr: nil,
 			},
@@ -100,13 +103,13 @@ func TestRefCopier_Copy(t *testing.T) {
 					Basic: basicSrc{
 						IntVal: 1,
 						IntPtr: jit.Ptr(1),
-						StrVal: "test",
+						StrVal: strTest,
 					},
 					Embed: embedSrc{
 						Basic: basicSrc{
 							IntVal: 1,
 							IntPtr: jit.Ptr(1),
-							StrVal: "test",
+							StrVal: strTest,
 						},
 						Slice: &sliceSrc{
 							Ints:   []int{1, 2, 3},
@@ -120,13 +123,13 @@ func TestRefCopier_Copy(t *testing.T) {
 				Basic: basicDst{
 					IntVal: 1,
 					IntPtr: jit.Ptr(1),
-					StrVal: "test",
+					StrVal: strTest,
 				},
 				Embed: embedDst{
 					Basic: basicDst{
 						IntVal: 1,
 						IntPtr: jit.Ptr(1),
-						StrVal: "test",
+						StrVal: strTest,
 					},
 					Slice: &sliceDst{
 						Ints:   []int{1, 2, 3},
@@ -229,13 +232,13 @@ func BenchmarkRefCopier_Copy(b *testing.B) {
 				Basic: basicSrc{
 					IntVal: 1,
 					IntPtr: jit.Ptr(1),
-					StrVal: "test",
+					StrVal: strTest,
 				},
 				Embed: embedSrc{
 					Basic: basicSrc{
 						IntVal: 1,
 						IntPtr: jit.Ptr(1),
-						StrVal: "test",
+						StrVal: strTest,
 					},
 					Slice: &sliceSrc{
 						Ints:   []int{1, 2, 3},

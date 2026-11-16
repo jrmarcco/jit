@@ -1,19 +1,22 @@
 package xslice
 
-// SymmDiffSetFunc symmetric difference of two slices
+import "slices"
+
+// SymmDiffSetFunc 返回两个切片的对称差 ( 相等性由 eq 定义 )。
+// 结果保持 src 在前、dst 独有元素在后的顺序。
 func SymmDiffSetFunc[T comparable](src, dst []T, eq eqFunc[T]) []T {
 	res := []T{}
 
-	// find elements not in src
+	// 找出 src 中不在 dst 内的元素。
 	for _, v := range src {
-		if !ContainsFunc(dst, func(t T) bool { return eq(v, t) }) {
+		if !slices.ContainsFunc(dst, func(t T) bool { return eq(v, t) }) {
 			res = append(res, v)
 		}
 	}
 
-	// find elements not in dst
+	// 找出 dst 中不在 src 内的元素。
 	for _, v := range dst {
-		if !ContainsFunc(src, func(t T) bool { return eq(v, t) }) {
+		if !slices.ContainsFunc(src, func(t T) bool { return eq(v, t) }) {
 			res = append(res, v)
 		}
 	}
@@ -21,7 +24,8 @@ func SymmDiffSetFunc[T comparable](src, dst []T, eq eqFunc[T]) []T {
 	return deDuplicateFunc(res, eq)
 }
 
-// SymmDiffSet symmetric difference of two slices
+// SymmDiffSet 返回两个切片的对称差。
+// 返回元素的顺序不做保证。
 func SymmDiffSet[T comparable](src, dst []T) []T {
 	srcMap, dstMap := toMap(src), toMap(dst)
 

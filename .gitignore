@@ -1,15 +1,32 @@
+# --- IDE / 编辑器 ---
+.DS_Store
+.idea/
+.vscode/
 *.iml
-*.log
-*.lock
+debug_bin*
+
+# --- Go 构建产物 ---
+# 注意：go.sum / go.work.sum / go.work.lock 需要入库——不要加 *.sum / *.lock 这类模式，
+# 它们会把 Go 的锁文件与校验和一并忽略掉。
+/bin/
+/dist/
+*.exe
+*.test
 *.out
-*.sum
+coverage.*
 
-**/tmp/
-**/data/
-**/log/
-**/logs/
+# --- 日志 ---
+*.log
 
-.idea
-.vscode
+# --- 本地环境文件与密钥 ( 不入库 ) ---
+*.local.env
+.env
+.env.*
+!.env.example
+*.pem
 
-**/.DS_Store
+# --- 临时目录 ---
+tmp/
+
+# --- 会话产物 ---
+.zcode/

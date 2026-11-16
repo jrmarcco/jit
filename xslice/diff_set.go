@@ -1,10 +1,13 @@
 package xslice
 
-// DiffSet returns the elements in src that are not in dst.
+import "slices"
+
+// DiffSet 返回 src 中不在 dst 内的元素 ( 差集 )。
+// 返回元素的顺序不做保证。
 func DiffSet[T comparable](src, dst []T) []T {
 	srcMap := toMap(src)
 	for _, v := range dst {
-		// remove v from srcMap
+		// 从 srcMap 中移除 v。
 		delete(srcMap, v)
 	}
 
@@ -16,19 +19,21 @@ func DiffSet[T comparable](src, dst []T) []T {
 	return ret
 }
 
+// DiffSetFunc 返回 src 中不在 dst 内的元素 ( 相等性由 eq 定义 )。
+// 结果保持 src 的顺序。
 func DiffSetFunc[T comparable](src, dst []T, eq eqFunc[T]) []T {
 	slice := make([]T, 0, len(src))
 	for _, v := range src {
-		// check if v is in dst
-		if !ContainsFunc(dst, func(t T) bool { return eq(v, t) }) {
+		// 判断 v 是否在 dst 中。
+		if !slices.ContainsFunc(dst, func(t T) bool { return eq(v, t) }) {
 			slice = append(slice, v)
 		}
 	}
 
 	ret := make([]T, 0, len(slice))
-	// remove duplicates
+	// 去重。
 	for idx, val := range slice {
-		if !ContainsFunc(slice[idx+1:], func(t T) bool { return eq(val, t) }) {
+		if !slices.ContainsFunc(slice[idx+1:], func(t T) bool { return eq(val, t) }) {
 			ret = append(ret, val)
 		}
 	}

@@ -5,15 +5,12 @@ import (
 	"github.com/jrmarcco/jit/internal/errs"
 )
 
-func zeroVal[T jit.RealNumber]() T {
-	var zero T
-	return zero
-}
-
-// Max returns the maximum value in the slice.
+// Max 返回切片中的最大值。
+// 切片为空时返回包装了 errs.ErrEmptySlice 的错误。
 func Max[T jit.RealNumber](slice []T) (T, error) {
+	var zero T
 	if len(slice) == 0 {
-		return zeroVal[T](), errs.ErrEmptySlice()
+		return zero, errs.NewErrEmptySlice()
 	}
 	res := slice[0]
 	for i := 1; i < len(slice); i++ {
@@ -24,10 +21,12 @@ func Max[T jit.RealNumber](slice []T) (T, error) {
 	return res, nil
 }
 
-// Min returns the minimum value in the slice.
+// Min 返回切片中的最小值。
+// 切片为空时返回包装了 errs.ErrEmptySlice 的错误。
 func Min[T jit.RealNumber](slice []T) (T, error) {
+	var zero T
 	if len(slice) == 0 {
-		return zeroVal[T](), errs.ErrEmptySlice()
+		return zero, errs.NewErrEmptySlice()
 	}
 
 	res := slice[0]
@@ -39,9 +38,10 @@ func Min[T jit.RealNumber](slice []T) (T, error) {
 	return res, nil
 }
 
-// Sum returns the sum of the slice.
+// Sum 返回切片元素之和。
+// 空切片的和为 T 的零值。
 func Sum[T jit.RealNumber](slice []T) T {
-	ret := zeroVal[T]()
+	var ret T
 
 	if len(slice) == 0 {
 		return ret

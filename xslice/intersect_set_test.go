@@ -23,12 +23,12 @@ func TestIntersectSetFunc(t *testing.T) {
 			dst:     []int{},
 			wantRes: []int{},
 		}, {
-			name:    "no intersection",
+			name:    tcNoIntersection,
 			src:     []int{1, 2, 3},
 			dst:     []int{4, 5, 6},
 			wantRes: []int{},
 		}, {
-			name:    "intersection",
+			name:    tcIntersection,
 			src:     []int{1, 2, 3, 4, 5},
 			dst:     []int{4, 5, 6, 7, 8},
 			wantRes: []int{4, 5},
@@ -65,12 +65,12 @@ func TestIntersectSet(t *testing.T) {
 			dst:     []int{},
 			wantRes: []int{},
 		}, {
-			name:    "no intersection",
+			name:    tcNoIntersection,
 			src:     []int{1, 2, 3},
 			dst:     []int{4, 5, 6},
 			wantRes: []int{},
 		}, {
-			name:    "intersection",
+			name:    tcIntersection,
 			src:     []int{1, 2, 3, 4, 5},
 			dst:     []int{4, 5, 6, 7, 8},
 			wantRes: []int{4, 5},

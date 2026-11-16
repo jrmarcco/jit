@@ -1,6 +1,7 @@
 package xslice
 
-// UnionSetFunc returns the union of two sets.
+// UnionSetFunc 返回两个切片的并集 ( 相等性由 eq 定义 )。
+// 结果保持 src 在前、dst 独有元素在后的顺序。
 func UnionSetFunc[T comparable](src, dst []T, eq eqFunc[T]) []T {
 	res := make([]T, 0, len(src)+len(dst))
 
@@ -10,7 +11,8 @@ func UnionSetFunc[T comparable](src, dst []T, eq eqFunc[T]) []T {
 	return deDuplicateFunc(res, eq)
 }
 
-// UnionSet returns the union of two sets.
+// UnionSet 返回两个切片的并集。
+// 返回元素的顺序不做保证。
 func UnionSet[T comparable](src, dst []T) []T {
 	srcMap, dstMap := toMap(src), toMap(dst)
 	for k := range srcMap {

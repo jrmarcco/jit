@@ -27,12 +27,12 @@ func TestEd25519Manager(t *testing.T) {
 	t.Parallel()
 
 	tcs := []struct {
-		name           string
-		user           ed25519User
-		manager        Manager[ed25519User]
-		wantIssuer     string
-		wantEncryptErr error
-		wantDecryptErr error
+		name          string
+		user          ed25519User
+		manager       Manager[ed25519User]
+		wantIssuer    string
+		wantSignErr   error
+		wantVerifyErr error
 	}{
 		{
 			name: "basic",
@@ -42,9 +42,9 @@ func TestEd25519Manager(t *testing.T) {
 				require.NoError(t, err)
 				return manager
 			}(),
-			wantIssuer:     "jit",
-			wantEncryptErr: nil,
-			wantDecryptErr: nil,
+			wantIssuer:    defaultIssuer,
+			wantSignErr:   nil,
+			wantVerifyErr: nil,
 		}, {
 			name: "expired",
 			user: ed25519User{ID: 1},
@@ -55,9 +55,9 @@ func TestEd25519Manager(t *testing.T) {
 				require.NoError(t, err)
 				return manager
 			}(),
-			wantIssuer:     "jit",
-			wantEncryptErr: nil,
-			wantDecryptErr: jwt.ErrTokenExpired,
+			wantIssuer:    defaultIssuer,
+			wantSignErr:   nil,
+			wantVerifyErr: jwt.ErrTokenExpired,
 		}, {
 			name: "with issuer",
 			user: ed25519User{ID: 1},
@@ -69,9 +69,9 @@ func TestEd25519Manager(t *testing.T) {
 				require.NoError(t, err)
 				return manager
 			}(),
-			wantIssuer:     "test-issuer",
-			wantEncryptErr: nil,
-			wantDecryptErr: nil,
+			wantIssuer:    "test-issuer",
+			wantSignErr:   nil,
+			wantVerifyErr: nil,
 		},
 	}
 
@@ -79,15 +79,15 @@ func TestEd25519Manager(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			token, err := tc.manager.Encrypt(tc.user)
-			assert.Equal(t, tc.wantEncryptErr, err)
+			token, err := tc.manager.Sign(tc.user)
+			assert.Equal(t, tc.wantSignErr, err)
 			if err != nil {
 				return
 			}
 
 			time.Sleep(time.Millisecond)
-			decrypted, err := tc.manager.Decrypt(token)
-			assert.Truef(t, errors.Is(err, tc.wantDecryptErr), "want: %v, got: %v", tc.wantDecryptErr, err)
+			decrypted, err := tc.manager.Verify(token)
+			assert.Truef(t, errors.Is(err, tc.wantVerifyErr), "want: %v, got: %v", tc.wantVerifyErr, err)
 			if err != nil {
 				return
 			}
@@ -103,10 +103,10 @@ func TestEd25519Manager_InvalidToken(t *testing.T) {
 	manager, err := NewEd25519ManagerBuilder[ed25519User](priPem, pubPem).Build()
 	require.NoError(t, err)
 
-	_, err = manager.Encrypt(ed25519User{ID: 1})
+	_, err = manager.Sign(ed25519User{ID: 1})
 	require.NoError(t, err)
 
-	_, err = manager.Decrypt("invalid token")
+	_, err = manager.Verify("invalid token")
 	wantErr := jwt.ErrTokenMalformed
 	assert.Truef(t, errors.Is(err, wantErr), "want: %v, got: %v", wantErr, err)
 }

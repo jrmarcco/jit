@@ -4,6 +4,7 @@ import (
 	"crypto/ed25519"
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"time"
 
@@ -21,9 +22,8 @@ type Ed25519ManagerBuilder[T any] struct {
 
 // NewEd25519ManagerBuilder 创建 ed25519 管理器。
 func NewEd25519ManagerBuilder[T any](encryptKey, decryptKey string) *Ed25519ManagerBuilder[T] {
-	const expiration = 24 * time.Hour
 	return &Ed25519ManagerBuilder[T]{
-		config:     NewClaimsConfig(WithExpiration(expiration)), // 默认 24 小时过期
+		config:     NewClaimsConfig(), // 默认 24 小时过期
 		encryptKey: encryptKey,
 		decryptKey: decryptKey,
 	}
@@ -32,9 +32,8 @@ func NewEd25519ManagerBuilder[T any](encryptKey, decryptKey string) *Ed25519Mana
 // NewEd25519VerifierBuilder 用于创建只包含 public key 的 ed25519 管理器。
 // 用于只需要验证 jwt 而不需要签发 jwt 的场景。
 func NewEd25519VerifierBuilder[T any](decryptKey string) *Ed25519ManagerBuilder[T] {
-	const expiration = 24 * time.Hour
 	return &Ed25519ManagerBuilder[T]{
-		config:     NewClaimsConfig(WithExpiration(expiration)),
+		config:     NewClaimsConfig(),
 		decryptKey: decryptKey,
 	}
 }
@@ -115,7 +114,8 @@ type Ed25519Manager[T any] struct {
 	pubKey ed25519.PublicKey  // 公钥
 }
 
-func (m *Ed25519Manager[T]) Encrypt(data T) (string, error) {
+// Sign 签发一个携带 data 的 jwt token。
+func (m *Ed25519Manager[T]) Sign(data T) (string, error) {
 	if m.priKey == nil {
 		return "", fmt.Errorf("[jit] private key not available")
 	}
@@ -134,7 +134,8 @@ func (m *Ed25519Manager[T]) Encrypt(data T) (string, error) {
 	return token.SignedString(m.priKey)
 }
 
-func (m *Ed25519Manager[T]) Decrypt(token string, opts ...jwt.ParserOption) (CustomClaims[T], error) {
+// Verify 校验 token 签名并解析 claims。
+func (m *Ed25519Manager[T]) Verify(token string, opts ...jwt.ParserOption) (CustomClaims[T], error) {
 	jwtToken, err := jwt.ParseWithClaims(
 		token,
 		&CustomClaims[T]{},
@@ -146,9 +147,28 @@ func (m *Ed25519Manager[T]) Decrypt(token string, opts ...jwt.ParserOption) (Cus
 		},
 		opts...,
 	)
-	if err != nil || !jwtToken.Valid {
+	if err != nil {
 		return CustomClaims[T]{}, fmt.Errorf("[jit] failed to verify jwt token: %w", err)
+	}
+	if !jwtToken.Valid {
+		return CustomClaims[T]{}, errors.New("[jit] invalid jwt token")
 	}
 	cc, _ := jwtToken.Claims.(*CustomClaims[T])
 	return *cc, nil
+}
+
+// Encrypt 签发一个携带 data 的 jwt token。
+//
+// Deprecated: jwt 是签名而非加密，
+// 请使用 Sign，将在未来版本移除。
+func (m *Ed25519Manager[T]) Encrypt(data T) (string, error) {
+	return m.Sign(data)
+}
+
+// Decrypt 校验 token 签名并解析 claims。
+//
+// Deprecated: jwt 是签名而非加密，
+// 请使用 Verify，将在未来版本移除。
+func (m *Ed25519Manager[T]) Decrypt(token string, opts ...jwt.ParserOption) (CustomClaims[T], error) {
+	return m.Verify(token, opts...)
 }

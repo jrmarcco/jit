@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// overcapacity
+// 覆盖容量与重复元素场景。
 func TestMapSet_Add(t *testing.T) {
 	t.Parallel()
 

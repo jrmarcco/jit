@@ -1,3 +1,4 @@
+// Package list 实现 xlist.SkipList 底层的跳表。
 package list
 
 import (
@@ -6,8 +7,16 @@ import (
 	"github.com/jrmarcco/jit"
 )
 
+// MaxLevel 为跳表节点的最大层数。
 const MaxLevel = 32
 
+// SkipList 为基于跳表实现的有序列表
+// ( Redis zskiplist 风格，span 支持按排名查询 )。
+//
+// 注意:
+//   - Insert 允许重复值: 相等的值存于多个节点 ( 多重集语义 )，
+//     Delete 每次删除其中一个。
+//   - SkipList 非并发安全，需要外部同步 ( 如 sync.RWMutex )。
 type SkipList[T any] struct {
 	cmp       jit.Comparator[T]
 	head      *skipListNode[T]
@@ -15,6 +24,7 @@ type SkipList[T any] struct {
 	size      int
 }
 
+// NewSkipList 创建空跳表，cmp 为元素比较器。
 func NewSkipList[T any](cmp jit.Comparator[T]) *SkipList[T] {
 	return &SkipList[T]{
 		cmp: cmp,
@@ -27,6 +37,7 @@ func NewSkipList[T any](cmp jit.Comparator[T]) *SkipList[T] {
 	}
 }
 
+// SkipListOf 由切片创建跳表 ( 按序逐个插入 )。
 func SkipListOf[T any](cmp jit.Comparator[T], slice []T) *SkipList[T] {
 	sl := NewSkipList(cmp)
 	for _, v := range slice {
@@ -35,14 +46,14 @@ func SkipListOf[T any](cmp jit.Comparator[T], slice []T) *SkipList[T] {
 	return sl
 }
 
-// Insert inserts a value into the skip list.
+// Insert 插入一个值 ( 允许重复 )。
 func (sl *SkipList[T]) Insert(val T) {
 	update := make([]*skipListNode[T], MaxLevel)
-	// record the cumulative span of the current node in each level
+	// 记录当前节点在各层的累计 span ( 排名 )。
 	rank := make([]int, MaxLevel)
 
 	currN := sl.head
-	// find the place to insert
+	// 寻找插入位置。
 	for i := sl.currLevel - 1; i >= 0; i-- {
 		if i == sl.currLevel-1 {
 			rank[i] = 0
@@ -50,16 +61,16 @@ func (sl *SkipList[T]) Insert(val T) {
 			rank[i] = rank[i+1]
 		}
 
-		// update the higher level node to head node
+		// 把高层的前驱节点更新为 head。
 		for currN.next[i] != nil && sl.cmp(currN.next[i].val, val) < 0 {
-			// cumulative span
+			// 累计 span。
 			rank[i] += currN.span[i]
 			currN = currN.next[i]
 		}
 		update[i] = currN
 	}
 
-	// generate level of new node
+	// 生成新节点的层数。
 	level := sl.randLevel()
 	if level > sl.currLevel {
 		for i := sl.currLevel; i < level; i++ {
@@ -70,14 +81,14 @@ func (sl *SkipList[T]) Insert(val T) {
 		sl.currLevel = level
 	}
 
-	// create a new node
+	// 创建新节点。
 	newN := &skipListNode[T]{
 		val:  val,
 		next: make([]*skipListNode[T], level),
 		span: make([]int, level),
 	}
 
-	// update index for all levels
+	// 更新各层索引。
 	for i := 0; i < level; i++ {
 		newN.next[i] = update[i].next[i]
 		update[i].next[i] = newN
@@ -93,12 +104,12 @@ func (sl *SkipList[T]) Insert(val T) {
 	sl.size++
 }
 
-// Delete remove target from the skip list.
+// Delete 删除一个目标值，成功返回 true，目标不存在返回 false。
 func (sl *SkipList[T]) Delete(target T) bool {
 	update := make([]*skipListNode[T], MaxLevel)
 	currN := sl.head
 
-	// find the precursor node
+	// 寻找目标节点的前驱节点。
 	for i := sl.currLevel - 1; i >= 0; i-- {
 		for currN.next[i] != nil && sl.cmp(currN.next[i].val, target) < 0 {
 			currN = currN.next[i]
@@ -106,13 +117,13 @@ func (sl *SkipList[T]) Delete(target T) bool {
 		update[i] = currN
 	}
 
-	// locate the target node
+	// 定位目标节点。
 	currN = currN.next[0]
 	if currN == nil || sl.cmp(currN.val, target) != 0 {
 		return false
 	}
 
-	// update index for all levels
+	// 更新各层索引。
 	for i := 0; i < len(currN.next); i++ {
 		if update[i].next[i] == currN {
 			update[i].span[i] += currN.span[i] - 1
@@ -126,7 +137,7 @@ func (sl *SkipList[T]) Delete(target T) bool {
 		update[i].span[i]--
 	}
 
-	// update current level of skip list
+	// 回收跳表当前的最高层。
 	for sl.currLevel > 1 && sl.head.next[sl.currLevel-1] == nil {
 		sl.currLevel--
 	}
@@ -135,7 +146,7 @@ func (sl *SkipList[T]) Delete(target T) bool {
 	return true
 }
 
-// Exists checks if the target element exists in the skip list and returns true if found, otherwise returns false.
+// Exists 判断目标元素是否存在。
 func (sl *SkipList[T]) Exists(target T) bool {
 	currN := sl.head
 
@@ -149,17 +160,17 @@ func (sl *SkipList[T]) Exists(target T) bool {
 	return currN != nil && sl.cmp(currN.val, target) == 0
 }
 
+// randLevel 按概率 p=0.25 随机生成节点层数，上限 MaxLevel。
 func (sl *SkipList[T]) randLevel() int {
 	level := 1
-	//nolint:gosec // G404: math/rand is sufficient for skip list balancing
+	//nolint:gosec // G404: 跳表均衡只需要非安全随机数。
 	for rand.Float64() < 0.25 && level < MaxLevel {
 		level++
 	}
 	return level
 }
 
-// GetByIndex retrieves the value at the specified index in the skip list.
-// The index starts from 0.
+// GetByIndex 返回第 index 个值 ( 按升序，index 从 0 起 )，越界返回 false。
 func (sl *SkipList[T]) GetByIndex(index int) (T, bool) {
 	if index < 0 || index >= sl.size {
 		var zero T
@@ -184,7 +195,7 @@ func (sl *SkipList[T]) GetByIndex(index int) (T, bool) {
 	return zero, false
 }
 
-// Peek returns the first element in the skip list without removing it.
+// Peek 返回最小的值 ( 不删除 )，列表为空返回 false。
 func (sl *SkipList[T]) Peek() (T, bool) {
 	if sl.head.next[0] == nil {
 		var zero T
@@ -193,6 +204,7 @@ func (sl *SkipList[T]) Peek() (T, bool) {
 	return sl.head.next[0].val, true
 }
 
+// ToSlice 返回按升序排列的全部元素。
 func (sl *SkipList[T]) ToSlice() []T {
 	res := make([]T, 0, sl.size)
 	currN := sl.head
@@ -204,10 +216,12 @@ func (sl *SkipList[T]) ToSlice() []T {
 	return res
 }
 
+// Len 返回元素个数。
 func (sl *SkipList[T]) Len() int {
 	return sl.size
 }
 
+// skipListNode 为跳表节点。
 type skipListNode[T any] struct {
 	val  T
 	next []*skipListNode[T]

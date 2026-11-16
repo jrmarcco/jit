@@ -2,29 +2,17 @@ package xslice
 
 import "slices"
 
-// ContainsFunc checks if the slice contains an element that satisfies the given function.
-func ContainsFunc[T comparable](slice []T, eq func(t T) bool) bool {
-	return slices.ContainsFunc(slice, eq)
-}
-
-// Contains checks if the slice contains the given element.
-func Contains[T comparable](slice []T, elem T) bool {
-	return ContainsFunc(slice, func(t T) bool { return t == elem })
-}
-
-// ContainsAnyFunc checks if the slice contains any of the given elements.
-func ContainsAnyFunc[T comparable](slice, elems []T, eq eqFunc[T]) bool {
+// ContainsAnyFunc 判断 slice 是否包含 elems 中的任意元素，相等性由 eq 定义。
+func ContainsAnyFunc[T any](slice, elems []T, eq eqFunc[T]) bool {
 	for _, e := range elems {
-		for _, v := range slice {
-			if eq(v, e) {
-				return true
-			}
+		if slices.ContainsFunc(slice, func(t T) bool { return eq(t, e) }) {
+			return true
 		}
 	}
 	return false
 }
 
-// ContainsAny checks if the slice contains any of the given elements.
+// ContainsAny 判断 slice 是否包含 elems 中的任意元素。
 func ContainsAny[T comparable](slice, elems []T) bool {
 	srcMap := toMap(slice)
 	for _, e := range elems {
@@ -35,26 +23,20 @@ func ContainsAny[T comparable](slice, elems []T) bool {
 	return false
 }
 
-// ContainsAllFunc checks if the slice contains all of the given elements.
-func ContainsAllFunc[T comparable](slice, elems []T, eq eqFunc[T]) bool {
-	if slice == nil || elems == nil {
-		return false
-	}
-
+// ContainsAllFunc 判断 slice 是否包含 elems 中的全部元素，相等性由 eq 定义。
+// elems 为空 ( 含 nil ) 时恒为 true ( 空集真空包含 )。
+func ContainsAllFunc[T any](slice, elems []T, eq eqFunc[T]) bool {
 	for _, e := range elems {
-		if !ContainsFunc(slice, func(t T) bool { return eq(e, t) }) {
+		if !slices.ContainsFunc(slice, func(t T) bool { return eq(e, t) }) {
 			return false
 		}
 	}
 	return true
 }
 
-// ContainsAll checks if the slice contains all of the given elements.
+// ContainsAll 判断 slice 是否包含 elems 中的全部元素。
+// elems 为空 ( 含 nil ) 时恒为 true ( 空集真空包含 )。
 func ContainsAll[T comparable](slice, elems []T) bool {
-	if slice == nil || elems == nil {
-		return false
-	}
-
 	srcMap := toMap(slice)
 	for _, e := range elems {
 		if _, ok := srcMap[e]; !ok {

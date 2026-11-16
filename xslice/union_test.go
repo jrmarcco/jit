@@ -18,22 +18,22 @@ func TestUnionSetFunc(t *testing.T) {
 		want []int
 	}{
 		{
-			name: "empty src",
+			name: tcEmptySrc,
 			src:  []int{},
 			dst:  []int{1, 2, 3},
 			want: []int{1, 2, 3},
 		}, {
-			name: "empty dst",
+			name: tcEmptyDst,
 			src:  []int{1, 2, 3},
 			dst:  []int{},
 			want: []int{1, 2, 3},
 		}, {
-			name: "no intersection",
+			name: tcNoIntersection,
 			src:  []int{1, 2, 3},
 			dst:  []int{4, 5, 6},
 			want: []int{1, 2, 3, 4, 5, 6},
 		}, {
-			name: "intersection",
+			name: tcIntersection,
 			src:  []int{1, 2, 3, 4, 5},
 			dst:  []int{4, 5, 6, 7, 8},
 			want: []int{1, 2, 3, 4, 5, 6, 7, 8},
@@ -60,22 +60,22 @@ func TestUnionSet(t *testing.T) {
 		want []int
 	}{
 		{
-			name: "empty src",
+			name: tcEmptySrc,
 			src:  []int{},
 			dst:  []int{1, 2, 3},
 			want: []int{1, 2, 3},
 		}, {
-			name: "empty dst",
+			name: tcEmptyDst,
 			src:  []int{1, 2, 3},
 			dst:  []int{},
 			want: []int{1, 2, 3},
 		}, {
-			name: "no intersection",
+			name: tcNoIntersection,
 			src:  []int{1, 2, 3},
 			dst:  []int{4, 5, 6},
 			want: []int{1, 2, 3, 4, 5, 6},
 		}, {
-			name: "intersection",
+			name: tcIntersection,
 			src:  []int{1, 2, 3, 4, 5},
 			dst:  []int{4, 5, 6, 7, 8},
 			want: []int{1, 2, 3, 4, 5, 6, 7, 8},

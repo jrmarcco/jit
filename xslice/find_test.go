@@ -22,13 +22,13 @@ func TestFind(t *testing.T) {
 		wantOk  bool
 	}{
 		{
-			name:    "empty slice",
+			name:    tcEmptySlice,
 			slice:   []int{},
 			match:   mf,
 			wantRes: 0,
 			wantOk:  false,
 		}, {
-			name:    "no match",
+			name:    tcNoMatch,
 			slice:   []int{1, 3, 5},
 			match:   mf,
 			wantRes: 0,
@@ -74,12 +74,12 @@ func TestFindAll(t *testing.T) {
 		wantRes []int
 	}{
 		{
-			name:    "empty slice",
+			name:    tcEmptySlice,
 			slice:   []int{},
 			match:   mf,
 			wantRes: []int{},
 		}, {
-			name:    "no match",
+			name:    tcNoMatch,
 			slice:   []int{1, 3, 5},
 			match:   mf,
 			wantRes: []int{},

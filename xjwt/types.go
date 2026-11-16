@@ -1,3 +1,5 @@
+// Package xjwt 提供基于 github.com/golang-jwt/jwt/v5 的 jwt 管理器，
+// 支持 HMAC、RSA 与 Ed25519 签名算法，泛型承载自定义 claims 数据。
 package xjwt
 
 import (
@@ -7,12 +9,21 @@ import (
 	"github.com/jrmarcco/jit/xbean/option"
 )
 
-const defaultExpiration = time.Hour
+const (
+	// defaultExpiration 为统一的默认 token 有效期，
+	// NewClaimsConfig 与各 manager builder 共用。
+	defaultExpiration = 24 * time.Hour
+	// defaultIssuer 为统一的默认签发人。
+	defaultIssuer = "jit"
+)
 
-// Manager jwt 管理器抽象
+// Manager jwt 管理器抽象。
+// jwt 是签名机制而非加密机制，因此方法命名为 Sign / Verify。
 type Manager[T any] interface {
-	Encrypt(data T) (string, error)
-	Decrypt(token string, opts ...jwt.ParserOption) (CustomClaims[T], error)
+	// Sign 签发一个携带 data 的 jwt token。
+	Sign(data T) (string, error)
+	// Verify 校验 token 签名与有效性，并解析出 claims。
+	Verify(token string, opts ...jwt.ParserOption) (CustomClaims[T], error)
 }
 
 type CustomClaims[T any] struct {
@@ -49,7 +60,7 @@ func WithJtiGenerator(jtiGenerator func() string) option.Opt[ClaimsConfig] {
 // 其他参数可以通过 option.Opt 自定义。
 func NewClaimsConfig(opts ...option.Opt[ClaimsConfig]) ClaimsConfig {
 	cfg := ClaimsConfig{
-		Issuer:       "jit", // 默认签发人
+		Issuer:       defaultIssuer, // 默认签发人
 		Expiration:   defaultExpiration,
 		JtiGenerator: func() string { return "" },
 	}

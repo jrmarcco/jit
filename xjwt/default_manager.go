@@ -1,6 +1,7 @@
 package xjwt
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -18,9 +19,8 @@ type DefaultManagerBuilder[T any] struct {
 }
 
 func NewDefaultManagerBuilder[T any](encryptKey, decryptKey string) *DefaultManagerBuilder[T] {
-	const expiration = 24 * time.Hour
 	return &DefaultManagerBuilder[T]{
-		config: NewClaimsConfig(WithExpiration(expiration)),
+		config: NewClaimsConfig(),
 
 		signingMethod: jwt.SigningMethodHS256,
 		encryptKey:    encryptKey,
@@ -29,9 +29,8 @@ func NewDefaultManagerBuilder[T any](encryptKey, decryptKey string) *DefaultMana
 }
 
 func NewDefaultVerifierBuilder[T any](decryptKey string) *DefaultManagerBuilder[T] {
-	const expiration = 24 * time.Hour
 	return &DefaultManagerBuilder[T]{
-		config:     NewClaimsConfig(WithExpiration(expiration)),
+		config:     NewClaimsConfig(),
 		decryptKey: decryptKey,
 	}
 }
@@ -65,7 +64,8 @@ type DefaultManager[T any] struct {
 	decryptKey    string
 }
 
-func (m *DefaultManager[T]) Encrypt(data T) (string, error) {
+// Sign 签发一个携带 data 的 jwt token。
+func (m *DefaultManager[T]) Sign(data T) (string, error) {
 	now := time.Now()
 	cc := &CustomClaims[T]{
 		Data: data,
@@ -81,18 +81,43 @@ func (m *DefaultManager[T]) Encrypt(data T) (string, error) {
 	return token.SignedString([]byte(m.encryptKey))
 }
 
-func (m *DefaultManager[T]) Decrypt(token string, opts ...jwt.ParserOption) (CustomClaims[T], error) {
+// Verify 校验 token 签名并解析 claims。
+func (m *DefaultManager[T]) Verify(token string, opts ...jwt.ParserOption) (CustomClaims[T], error) {
 	jwtToken, err := jwt.ParseWithClaims(
 		token,
 		&CustomClaims[T]{},
-		func(_ *jwt.Token) (any, error) {
+		func(token *jwt.Token) (any, error) {
+			// 拒绝非预期算法签发的 token，
+			// 防止算法混淆攻击。
+			if token.Method.Alg() != m.signingMethod.Alg() {
+				return nil, fmt.Errorf("[jit] unexpected signing method: %v", token.Header["alg"])
+			}
 			return []byte(m.decryptKey), nil
 		},
 		opts...,
 	)
-	if err != nil || !jwtToken.Valid {
+	if err != nil {
 		return CustomClaims[T]{}, fmt.Errorf("[jit] failed to verify jwt token: %w", err)
+	}
+	if !jwtToken.Valid {
+		return CustomClaims[T]{}, errors.New("[jit] invalid jwt token")
 	}
 	cc, _ := jwtToken.Claims.(*CustomClaims[T])
 	return *cc, nil
+}
+
+// Encrypt 签发一个携带 data 的 jwt token。
+//
+// Deprecated: jwt 是签名而非加密，
+// 请使用 Sign，将在未来版本移除。
+func (m *DefaultManager[T]) Encrypt(data T) (string, error) {
+	return m.Sign(data)
+}
+
+// Decrypt 校验 token 签名并解析 claims。
+//
+// Deprecated: jwt 是签名而非加密，
+// 请使用 Verify，将在未来版本移除。
+func (m *DefaultManager[T]) Decrypt(token string, opts ...jwt.ParserOption) (CustomClaims[T], error) {
+	return m.Verify(token, opts...)
 }

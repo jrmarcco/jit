@@ -44,39 +44,39 @@ func TestLinkedList_Insert(t *testing.T) {
 		wantSize int
 	}{
 		{
-			name:     "basic",
+			name:     tcBasic,
 			ll:       NewLinkedList[int](),
 			index:    0,
 			value:    1,
 			wantRes:  []int{1},
 			wantSize: 1,
 		}, {
-			name:     "insert to head",
+			name:     tcInsertToHead,
 			ll:       LinkedListOf([]int{1, 2, 3}),
 			index:    0,
 			value:    -1,
 			wantRes:  []int{-1, 1, 2, 3},
 			wantSize: 4,
 		}, {
-			name:     "insert to tail",
+			name:     tcInsertToTail,
 			ll:       LinkedListOf([]int{1, 2, 3}),
 			index:    3,
 			value:    4,
 			wantRes:  []int{1, 2, 3, 4},
 			wantSize: 4,
 		}, {
-			name:     "insert to middle",
+			name:     tcInsertToMiddle,
 			ll:       LinkedListOf([]int{1, 2, 3}),
 			index:    1,
 			value:    -1,
 			wantRes:  []int{1, -1, 2, 3},
 			wantSize: 4,
 		}, {
-			name:     "out of bounds",
+			name:     tcOutOfBounds,
 			ll:       LinkedListOf([]int{1, 2, 3}),
 			index:    10,
 			value:    10,
-			wantErr:  errs.ErrIndexOutOfBounds(3, 10),
+			wantErr:  errs.NewErrIndexOutOfBounds(3, 10),
 			wantRes:  []int{1, 2, 3},
 			wantSize: 3,
 		},
@@ -112,7 +112,7 @@ func TestLinkedList_Del(t *testing.T) {
 		wantSize int
 	}{
 		{
-			name:     "basic",
+			name:     tcBasic,
 			ll:       LinkedListOf([]int{1, 2, 3}),
 			index:    1,
 			wantRes:  []int{1, 3},
@@ -130,10 +130,10 @@ func TestLinkedList_Del(t *testing.T) {
 			wantRes:  []int{1, 2},
 			wantSize: 2,
 		}, {
-			name:     "out of bounds",
+			name:     tcOutOfBounds,
 			ll:       LinkedListOf([]int{1, 2, 3}),
 			index:    10,
-			wantErr:  errs.ErrIndexOutOfBounds(3, 10),
+			wantErr:  errs.NewErrIndexOutOfBounds(3, 10),
 			wantRes:  []int{1, 2, 3},
 			wantSize: 3,
 		},
@@ -164,7 +164,7 @@ func TestLinkedList_Set(t *testing.T) {
 		wantSize int
 	}{
 		{
-			name:     "basic",
+			name:     tcBasic,
 			ll:       LinkedListOf([]int{1, 2, 3}),
 			index:    1,
 			value:    4,
@@ -185,11 +185,11 @@ func TestLinkedList_Set(t *testing.T) {
 			wantRes:  []int{1, 2, 4},
 			wantSize: 3,
 		}, {
-			name:     "out of bounds",
+			name:     tcOutOfBounds,
 			ll:       LinkedListOf([]int{1, 2, 3}),
 			index:    10,
 			value:    10,
-			wantErr:  errs.ErrIndexOutOfBounds(3, 10),
+			wantErr:  errs.NewErrIndexOutOfBounds(3, 10),
 			wantRes:  []int{1, 2, 3},
 			wantSize: 3,
 		},
@@ -224,7 +224,7 @@ func TestLinkedList_Get(t *testing.T) {
 		wantErr error
 	}{
 		{
-			name:    "basic",
+			name:    tcBasic,
 			ll:      LinkedListOf([]int{1, 2, 3}),
 			index:   1,
 			wantRes: 2,
@@ -239,10 +239,10 @@ func TestLinkedList_Get(t *testing.T) {
 			index:   2,
 			wantRes: 3,
 		}, {
-			name:    "out of bounds",
+			name:    tcOutOfBounds,
 			ll:      LinkedListOf([]int{1, 2, 3}),
 			index:   10,
-			wantErr: errs.ErrIndexOutOfBounds(3, 10),
+			wantErr: errs.NewErrIndexOutOfBounds(3, 10),
 		},
 	}
 

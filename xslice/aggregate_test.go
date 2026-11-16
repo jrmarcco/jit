@@ -19,32 +19,32 @@ func TestMax(t *testing.T) {
 		wantErr error
 	}{
 		{
-			name:    "empty slice",
+			name:    tcEmptySlice,
 			slice:   []int{},
 			wantRes: 0,
-			wantErr: errs.ErrEmptySlice(),
+			wantErr: errs.NewErrEmptySlice(),
 		}, {
-			name:    "nil slice",
+			name:    tcNilSlice,
 			slice:   nil,
 			wantRes: 0,
-			wantErr: errs.ErrEmptySlice(),
+			wantErr: errs.NewErrEmptySlice(),
 		}, {
-			name:    "single element",
+			name:    tcSingleElement,
 			slice:   []int{1},
 			wantRes: 1,
 			wantErr: nil,
 		}, {
-			name:    "multiple elements",
+			name:    tcMultipleElements,
 			slice:   []int{1, 2, 3, 4, 5},
 			wantRes: 5,
 			wantErr: nil,
 		}, {
-			name:    "negative elements",
+			name:    tcNegativeElements,
 			slice:   []int{-1, -2, -3, -4, -5},
 			wantRes: -1,
 			wantErr: nil,
 		}, {
-			name:    "mixed elements",
+			name:    tcMixedElements,
 			slice:   []int{1, -2, 3, -4, 5},
 			wantRes: 5,
 			wantErr: nil,
@@ -77,32 +77,32 @@ func TestMin(t *testing.T) {
 		wantErr error
 	}{
 		{
-			name:    "empty slice",
+			name:    tcEmptySlice,
 			slice:   []int{},
 			wantRes: 0,
-			wantErr: errs.ErrEmptySlice(),
+			wantErr: errs.NewErrEmptySlice(),
 		}, {
-			name:    "nil slice",
+			name:    tcNilSlice,
 			slice:   nil,
 			wantRes: 0,
-			wantErr: errs.ErrEmptySlice(),
+			wantErr: errs.NewErrEmptySlice(),
 		}, {
-			name:    "single element",
+			name:    tcSingleElement,
 			slice:   []int{1},
 			wantRes: 1,
 			wantErr: nil,
 		}, {
-			name:    "multiple elements",
+			name:    tcMultipleElements,
 			slice:   []int{1, 2, 3, 4, 5},
 			wantRes: 1,
 			wantErr: nil,
 		}, {
-			name:    "negative elements",
+			name:    tcNegativeElements,
 			slice:   []int{-1, -2, -3, -4, -5},
 			wantRes: -5,
 			wantErr: nil,
 		}, {
-			name:    "mixed elements",
+			name:    tcMixedElements,
 			slice:   []int{1, -2, 3, -4, 5},
 			wantRes: -4,
 			wantErr: nil,
@@ -133,27 +133,27 @@ func TestSum(t *testing.T) {
 		wantRes int
 	}{
 		{
-			name:    "empty slice",
+			name:    tcEmptySlice,
 			slice:   []int{},
 			wantRes: 0,
 		}, {
-			name:    "nil slice",
+			name:    tcNilSlice,
 			slice:   nil,
 			wantRes: 0,
 		}, {
-			name:    "single element",
+			name:    tcSingleElement,
 			slice:   []int{1},
 			wantRes: 1,
 		}, {
-			name:    "multiple elements",
+			name:    tcMultipleElements,
 			slice:   []int{1, 2, 3, 4, 5},
 			wantRes: 15,
 		}, {
-			name:    "negative elements",
+			name:    tcNegativeElements,
 			slice:   []int{-1, -2, -3, -4, -5},
 			wantRes: -15,
 		}, {
-			name:    "mixed elements",
+			name:    tcMixedElements,
 			slice:   []int{1, -2, 3, -4, 5},
 			wantRes: 3,
 		},

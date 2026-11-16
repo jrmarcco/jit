@@ -1,8 +1,8 @@
 # initialize project environment
 .PHONY: setup
 setup:
-	@sh ./scripts/setup-env.sh
-	@sh ./scripts/setup-hook.sh
+	@sh ./scripts/setup_env.sh
+	@sh ./scripts/setup_hook.sh
 
 # format code
 .PHONY: fmt
@@ -21,12 +21,17 @@ check:
 	@$(MAKE) --no-print-directory fmt
 	@$(MAKE) --no-print-directory tidy
 
-# lint code
+# static check with go vet
+.PHONY: vet
+vet:
+	@go vet ./...
+
+# lint code (baseline tier, CI blocking)
 .PHONY: lint
 lint:
 	@golangci-lint run -c ./scripts/lint/.golangci.yaml ./...
 
-.PHONY: test
-test:
-	@go test -v -cover ./...
-
+# lint code (strict tier, report-only target)
+.PHONY: lint-strict
+lint-strict:
+	@golangci-lint run -c ./scripts/lint/.golangci.strict.yaml ./...

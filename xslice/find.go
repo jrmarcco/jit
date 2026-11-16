@@ -1,6 +1,6 @@
 package xslice
 
-// Find returns the first element that matches the condition.
+// Find 返回第一个满足条件的元素，不存在时返回零值与 false。
 func Find[T any](slice []T, match matchFunc[T]) (T, bool) {
 	for _, v := range slice {
 		if match(v) {
@@ -12,10 +12,9 @@ func Find[T any](slice []T, match matchFunc[T]) (T, bool) {
 	return t, false
 }
 
-// FindAll returns all elements that match the condition.
+// FindAll 返回所有满足条件的元素。
 func FindAll[T any](slice []T, match matchFunc[T]) []T {
-	// estimate the capacity of the result slice
-	// 25% of the slice length plus one
+	// 预估结果切片容量: 切片长度的 25% 再加一。
 	res := make([]T, 0, len(slice)>>2+1)
 	for _, v := range slice {
 		if match(v) {

@@ -2,6 +2,7 @@ package xjwt
 
 import (
 	"crypto/rsa"
+	"errors"
 	"fmt"
 	"time"
 
@@ -18,18 +19,16 @@ type RSAManagerBuilder[T any] struct {
 }
 
 func NewRSAManagerBuilder[T any](encryptKey, decryptKey string) *RSAManagerBuilder[T] {
-	const expiration = 24 * time.Hour
 	return &RSAManagerBuilder[T]{
-		config:     NewClaimsConfig(WithExpiration(expiration)), // 默认 24 小时过期
+		config:     NewClaimsConfig(), // 默认 24 小时过期
 		encryptKey: encryptKey,
 		decryptKey: decryptKey,
 	}
 }
 
 func NewRSAVerifierBuilder[T any](decryptKey string) *RSAManagerBuilder[T] {
-	const expiration = 24 * time.Hour
 	return &RSAManagerBuilder[T]{
-		config:     NewClaimsConfig(WithExpiration(expiration)),
+		config:     NewClaimsConfig(),
 		decryptKey: decryptKey,
 	}
 }
@@ -72,7 +71,8 @@ type RSAManager[T any] struct {
 	pubKey *rsa.PublicKey  // 公钥
 }
 
-func (m *RSAManager[T]) Encrypt(data T) (string, error) {
+// Sign 签发一个携带 data 的 jwt token。
+func (m *RSAManager[T]) Sign(data T) (string, error) {
 	if m.priKey == nil {
 		return "", fmt.Errorf("[jit] private key not available")
 	}
@@ -91,7 +91,8 @@ func (m *RSAManager[T]) Encrypt(data T) (string, error) {
 	return token.SignedString(m.priKey)
 }
 
-func (m *RSAManager[T]) Decrypt(token string, opts ...jwt.ParserOption) (CustomClaims[T], error) {
+// Verify 校验 token 签名并解析 claims。
+func (m *RSAManager[T]) Verify(token string, opts ...jwt.ParserOption) (CustomClaims[T], error) {
 	jwtToken, err := jwt.ParseWithClaims(
 		token,
 		&CustomClaims[T]{},
@@ -103,9 +104,28 @@ func (m *RSAManager[T]) Decrypt(token string, opts ...jwt.ParserOption) (CustomC
 		},
 		opts...,
 	)
-	if err != nil || !jwtToken.Valid {
+	if err != nil {
 		return CustomClaims[T]{}, fmt.Errorf("[jit] failed to verify jwt token: %w", err)
+	}
+	if !jwtToken.Valid {
+		return CustomClaims[T]{}, errors.New("[jit] invalid jwt token")
 	}
 	cc, _ := jwtToken.Claims.(*CustomClaims[T])
 	return *cc, nil
+}
+
+// Encrypt 签发一个携带 data 的 jwt token。
+//
+// Deprecated: jwt 是签名而非加密，
+// 请使用 Sign，将在未来版本移除。
+func (m *RSAManager[T]) Encrypt(data T) (string, error) {
+	return m.Sign(data)
+}
+
+// Decrypt 校验 token 签名并解析 claims。
+//
+// Deprecated: jwt 是签名而非加密，
+// 请使用 Verify，将在未来版本移除。
+func (m *RSAManager[T]) Decrypt(token string, opts ...jwt.ParserOption) (CustomClaims[T], error) {
+	return m.Verify(token, opts...)
 }

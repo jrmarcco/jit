@@ -23,19 +23,19 @@ func TestDel(t *testing.T) {
 			slice:   []int{},
 			index:   0,
 			wantRes: []int{},
-			wantErr: errs.ErrIndexOutOfBounds(0, 0),
+			wantErr: errs.NewErrIndexOutOfBounds(0, 0),
 		}, {
 			name:    "delete from non-empty slice at index out of bounds",
 			slice:   []int{1, 2, 3},
 			index:   4,
 			wantRes: []int{1, 2, 3},
-			wantErr: errs.ErrIndexOutOfBounds(3, 4),
+			wantErr: errs.NewErrIndexOutOfBounds(3, 4),
 		}, {
 			name:    "delete from non-empty slice at index negative",
 			slice:   []int{1, 2, 3},
 			index:   -1,
 			wantRes: []int{1, 2, 3},
-			wantErr: errs.ErrIndexOutOfBounds(3, -1),
+			wantErr: errs.NewErrIndexOutOfBounds(3, -1),
 		}, {
 			name:    "delete from non-empty slice at index start",
 			slice:   []int{1, 2, 3},
