@@ -76,33 +76,28 @@ func (m *RSAManager[T]) Sign(data T) (string, error) {
 	if m.priKey == nil {
 		return "", fmt.Errorf("[jit] private key not available")
 	}
-	now := time.Now()
-	cc := &CustomClaims[T]{
-		Data: data,
-		RegisteredClaims: jwt.RegisteredClaims{
-			Issuer:    m.config.Issuer,
-			IssuedAt:  jwt.NewNumericDate(now),
-			ExpiresAt: jwt.NewNumericDate(now.Add(m.config.Expiration)),
-			ID:        m.config.JtiGenerator(),
-		},
+
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, signClaims(m.config, data, time.Now()))
+	if err := applyTokenHeader(token, m.config.Header); err != nil {
+		return "", err
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodRS256, cc)
 	return token.SignedString(m.priKey)
 }
 
 // Verify 校验 token 签名并解析 claims。
+// 配置了 Audience 时按该受众强制校验。
 func (m *RSAManager[T]) Verify(token string, opts ...jwt.ParserOption) (CustomClaims[T], error) {
 	jwtToken, err := jwt.ParseWithClaims(
 		token,
-		&CustomClaims[T]{},
+		newClaims[T](m.config),
 		func(token *jwt.Token) (any, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 				return nil, fmt.Errorf("[jit] unexpected signing method: %v", token.Header["alg"])
 			}
 			return m.pubKey, nil
 		},
-		opts...,
+		withConfiguredAudience(m.config, opts)...,
 	)
 	if err != nil {
 		return CustomClaims[T]{}, fmt.Errorf("[jit] failed to verify jwt token: %w", err)
@@ -110,8 +105,8 @@ func (m *RSAManager[T]) Verify(token string, opts ...jwt.ParserOption) (CustomCl
 	if !jwtToken.Valid {
 		return CustomClaims[T]{}, errors.New("[jit] invalid jwt token")
 	}
-	cc, _ := jwtToken.Claims.(*CustomClaims[T])
-	return *cc, nil
+
+	return toCustomClaims[T](jwtToken.Claims)
 }
 
 // Encrypt 签发一个携带 data 的 jwt token。

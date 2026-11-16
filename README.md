@@ -14,7 +14,7 @@
 | `xsync` | 并发原语：泛型 `Pool`/`Map`、支持 context 的 `Cond` |
 | `xretry` | 重试循环与退避策略（固定间隔、指数退避） |
 | `xpool` | 任务池：动态伸缩 goroutine 的 `BlockTaskPool` |
-| `xjwt` | 基于 golang-jwt/jwt/v5 的 jwt 管理器（HMAC/RSA/Ed25519） |
+| `xjwt` | 基于 golang-jwt/jwt/v5 的 jwt 管理器（HMAC/RSA/Ed25519），支持 `aud`、自定义 header（`kid`）与顶层平铺 claims 布局 |
 | `xbean/option` | 泛型 option 模式 |
 | `xbean/copy` | 基于反射的 struct 拷贝器（字段忽略、字段转换） |
 

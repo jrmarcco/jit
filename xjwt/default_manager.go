@@ -28,6 +28,8 @@ func NewDefaultManagerBuilder[T any](encryptKey, decryptKey string) *DefaultMana
 	}
 }
 
+// NewDefaultVerifierBuilder 创建仅验证场景的默认 jwt 管理器 builder，
+// 不指定具体算法，Verify 接受 HMAC 系 ( HS256/HS384/HS512 ) 签发的 token。
 func NewDefaultVerifierBuilder[T any](decryptKey string) *DefaultManagerBuilder[T] {
 	return &DefaultManagerBuilder[T]{
 		config:     NewClaimsConfig(),
@@ -66,35 +68,27 @@ type DefaultManager[T any] struct {
 
 // Sign 签发一个携带 data 的 jwt token。
 func (m *DefaultManager[T]) Sign(data T) (string, error) {
-	now := time.Now()
-	cc := &CustomClaims[T]{
-		Data: data,
-		RegisteredClaims: jwt.RegisteredClaims{
-			Issuer:    m.config.Issuer,
-			IssuedAt:  jwt.NewNumericDate(now),
-			ExpiresAt: jwt.NewNumericDate(now.Add(m.config.Expiration)),
-			ID:        m.config.JtiGenerator(),
-		},
+	token := jwt.NewWithClaims(m.signingMethod, signClaims(m.config, data, time.Now()))
+	if err := applyTokenHeader(token, m.config.Header); err != nil {
+		return "", err
 	}
 
-	token := jwt.NewWithClaims(m.signingMethod, cc)
 	return token.SignedString([]byte(m.encryptKey))
 }
 
 // Verify 校验 token 签名并解析 claims。
+// 配置了 Audience 时按该受众强制校验。
 func (m *DefaultManager[T]) Verify(token string, opts ...jwt.ParserOption) (CustomClaims[T], error) {
 	jwtToken, err := jwt.ParseWithClaims(
 		token,
-		&CustomClaims[T]{},
+		newClaims[T](m.config),
 		func(token *jwt.Token) (any, error) {
-			// 拒绝非预期算法签发的 token，
-			// 防止算法混淆攻击。
-			if token.Method.Alg() != m.signingMethod.Alg() {
-				return nil, fmt.Errorf("[jit] unexpected signing method: %v", token.Header["alg"])
+			if err := m.checkSigningMethod(token); err != nil {
+				return nil, err
 			}
 			return []byte(m.decryptKey), nil
 		},
-		opts...,
+		withConfiguredAudience(m.config, opts)...,
 	)
 	if err != nil {
 		return CustomClaims[T]{}, fmt.Errorf("[jit] failed to verify jwt token: %w", err)
@@ -102,8 +96,25 @@ func (m *DefaultManager[T]) Verify(token string, opts ...jwt.ParserOption) (Cust
 	if !jwtToken.Valid {
 		return CustomClaims[T]{}, errors.New("[jit] invalid jwt token")
 	}
-	cc, _ := jwtToken.Claims.(*CustomClaims[T])
-	return *cc, nil
+
+	return toCustomClaims[T](jwtToken.Claims)
+}
+
+// checkSigningMethod 拒绝非预期算法签发的 token，防止算法混淆攻击。
+// 密钥为 HMAC 密钥，因此一律要求 HMAC 系算法；
+// 配置了具体算法时 ( 签发场景 ) 进一步要求精确匹配。
+func (m *DefaultManager[T]) checkSigningMethod(token *jwt.Token) error {
+	unexpectedErr := fmt.Errorf("[jit] unexpected signing method: %v", token.Header["alg"])
+
+	if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+		return unexpectedErr
+	}
+
+	if m.signingMethod != nil && token.Method.Alg() != m.signingMethod.Alg() {
+		return unexpectedErr
+	}
+
+	return nil
 }
 
 // Encrypt 签发一个携带 data 的 jwt token。
