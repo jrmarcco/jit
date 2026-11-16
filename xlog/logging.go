@@ -4,9 +4,52 @@
 //   - dev:  单行紧凑格式 ( 日期时间 级别 组件 消息 k=v )、TTY 着色，便于开发观察。
 //   - prod: zap core + JSON encoder 承载的 slog handler，面向日志采集。
 //
-// 两种模式均支持可选双写落盘 ( dev 落盘为同格式纯文本，prod 落盘为 JSON )。
+// 两种模式均支持可选双写落盘 ( dev 落盘为同格式纯文本，prod 落盘为 JSON )，
+// 落盘由 lumberjack 承载按大小轮转。
 //
 // 装配参数由调用方 ( provider ) 从应用配置传入，不直接读取环境变量。
+//
+// # 使用示例
+//
+// 进程入口装配一次 ( 必须早于任何日志调用与框架初始化 ):
+//
+//	func main() {
+//		cleanup := xlog.Setup(xlog.Options{
+//			Mode:  xlog.ModeDev,            // 开发: 终端单行; 生产换 ModeProd ( JSON )
+//			Level: xlog.ParseLevel("info"),
+//			Color: "auto",                  // always | never | auto ( 缺省 )
+//
+//			// 可选落盘 ( 双写终端 + 文件，按大小轮转 ):
+//			File:       "/var/log/app/server.log",
+//			MaxSizeMB:  100,               // 单文件超 100MB 切割，<=0 用默认值 100
+//			MaxBackups: 7,                 // 保留 7 份旧文件，0 保留全部
+//			MaxAgeDays: 30,                // 旧文件保留 30 天，0 不限
+//			Compress:   true,              // 旧文件 gzip 压缩
+//		})
+//		defer cleanup() // 进程退出前冲刷并关闭文件句柄
+//
+//		// ... 应用逻辑
+//	}
+//
+// 业务代码经 For 获取组件日志器 ( 组件名列宽随最长组件名自适应 ):
+//
+//	var logger = xlog.For("ws.server")
+//
+//	func serve() {
+//		logger.Info("server started", "addr", ":9090")
+//		// dev 输出: 2026-11-16T22:40:01.123 INFO  ws.server server started addr=:9090
+//
+//		logger.Warn("slow client closed",
+//			"conn_id", connID,
+//			"body", xlog.Truncate(largeBody, 128)) // 热路径裁剪大字段
+//		// prod 输出: {"level":"WARN","time":"...","component":"ws.server","msg":"...", ...}
+//	}
+//
+// 测试中替换全局 handler 即刻生效 ( For 每次即时解析 slog.Default ):
+//
+//	var buf bytes.Buffer
+//	slog.SetDefault(slog.New(xlog.NewConsoleHandler(&buf, slog.LevelInfo, false)))
+//	xlog.For("test").Info("hi") // 断言 buf 内容
 package xlog
 
 import (
