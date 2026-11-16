@@ -7,6 +7,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// 本文件内复用的用例名常量 ( goconst )。
+const tcNil = "nil"
+
 func TestKeys(t *testing.T) {
 	t.Parallel()
 

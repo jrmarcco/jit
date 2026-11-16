@@ -6,6 +6,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// 本文件内复用的用例名常量 ( goconst )。
+const (
+	tcContains    = "contains"
+	tcNotContains = "not contains"
+	tcNilElems    = "nil elems"
+)
+
 func TestContainsAnyFunc(t *testing.T) {
 	t.Parallel()
 

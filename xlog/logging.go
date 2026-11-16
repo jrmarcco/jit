@@ -49,7 +49,7 @@
 //
 //	var buf bytes.Buffer
 //	slog.SetDefault(slog.New(xlog.NewConsoleHandler(&buf, slog.LevelInfo, false)))
-//	xlog.For("test").Info("hi") // 断言 buf 内容
+//	xlog.For("test").Info("hi")
 package xlog
 
 import (

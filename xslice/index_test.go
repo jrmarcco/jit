@@ -7,6 +7,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// 本文件内复用的用例名常量 ( goconst )。
+const (
+	tcFound    = "found"
+	tcNotFound = "not found"
+)
+
 func TestLastIndexFunc(t *testing.T) {
 	t.Parallel()
 

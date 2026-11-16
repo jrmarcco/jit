@@ -7,6 +7,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// personJohn 为 TestReverseOfStruct 使用的样例人名 ( goconst )。
+const personJohn = "John"
+
 func TestReverseOfInt(t *testing.T) {
 	t.Parallel()
 

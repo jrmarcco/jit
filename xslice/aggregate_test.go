@@ -9,6 +9,12 @@ import (
 	"github.com/jrmarcco/jit/internal/errs"
 )
 
+// 本文件内复用的用例名常量 ( goconst )。
+const (
+	tcNegativeElements = "negative elements"
+	tcMixedElements    = "mixed elements"
+)
+
 func TestMax(t *testing.T) {
 	t.Parallel()
 
